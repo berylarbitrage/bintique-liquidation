@@ -11,7 +11,7 @@ const I18N = {
     truck_orders: '卡车订单', truck_quotes: '卡车明细', truck_history: '租车历史', users: '用户',
     monthly_pl: '每月 销售额 / 成本 / 毛利', so_status: 'SO 状态', top_customers: '买家排行 (销售额)', top_suppliers: '货源排行 (毛利)', recent_orders: '最近订单',
     search: '搜索...', export_csv: '导出 CSV', new_order: '+ New Order', add_supplier: '+ Add Supplier', add_customer: '+ Add Customer', add_user: '+ 新增用户',
-    move_checkout: 'Move to Checkout', make_invoice: '生成发票', select_first: '请先选择订单', refresh: '刷新',
+    move_checkout: 'Move to Checkout', make_invoice: '生成发票', print_sel: '打印', print_so: '打印 SO', print_po: '打印 PO', print_inv: '打印发票', select_first: '请先选择订单', refresh: '刷新',
     th_order: '订单号', th_supplier: '货源', th_customer: '买家', th_desc: '货物描述', th_qty: '数量', th_total: '金额', th_extra: '额外支出', th_truck: '卡车费', th_cost: '总成本',
     th_pickup_date: '提货日期', th_delivery_date: '送货日期', th_status: '状态', th_sold_to: '卖出 (SO)', th_profit: '毛利', th_margin: '毛利率', th_payment: '付款',
     th_po: '关联 PO', th_cost_share: '成本 (分摊)', th_fulfillment: '送货/自提', th_date: '日期', th_type: '类型',
@@ -53,7 +53,7 @@ const I18N = {
     truck_orders: 'Truck Orders', truck_quotes: 'Truck Details', truck_history: 'Rental History', users: 'Users',
     monthly_pl: 'Monthly Revenue / Cost / Profit', so_status: 'SO Status', top_customers: 'Top Customers (Revenue)', top_suppliers: 'Top Suppliers (Profit)', recent_orders: 'Recent Orders',
     search: 'Search...', export_csv: 'Export CSV', new_order: '+ New Order', add_supplier: '+ Add Supplier', add_customer: '+ Add Customer', add_user: '+ Add User',
-    move_checkout: 'Move to Checkout', make_invoice: 'Create Invoice', select_first: 'Please select orders first', refresh: 'Refresh',
+    move_checkout: 'Move to Checkout', make_invoice: 'Create Invoice', print_sel: 'Print', print_so: 'Print SO', print_po: 'Print PO', print_inv: 'Print Invoice', select_first: 'Please select orders first', refresh: 'Refresh',
     th_order: 'Order #', th_supplier: 'Supplier', th_customer: 'Customer', th_desc: 'Description', th_qty: 'Qty', th_total: 'Amount', th_extra: 'Extra Expense', th_truck: 'Truck', th_cost: 'Total Cost',
     th_pickup_date: 'Pickup Date', th_delivery_date: 'Delivery Date', th_status: 'Status', th_sold_to: 'Sold (SO)', th_profit: 'Profit', th_margin: 'Margin', th_payment: 'Payment',
     th_po: 'Linked PO', th_cost_share: 'Cost (share)', th_fulfillment: 'Delivery/Pickup', th_date: 'Date', th_type: 'Type',
@@ -438,6 +438,9 @@ async function openOrderModal(id, type, preset) {
     <div class="modal-actions">
       ${id && currentUser.role === 'admin' ? `<button class="btn-del" onclick="deleteOrder(${id})">${t('delete')}</button>` : ''}
       ${id && !isSO && o.status !== 'cancelled' ? `<button class="btn btn-grn" onclick="sellFromPO(${id})">${t('create_so')}</button>` : ''}
+      ${id ? `<button class="btn btn-out" onclick="printOrders([${id}])">${t(isSO ? 'print_so' : 'print_po')}</button>` : ''}
+      ${id ? (o.invoice_id ? `<button class="btn btn-out" onclick="printInvoice(${o.invoice_id})">${t('print_inv')}</button>`
+        : o.status !== 'cancelled' ? `<button class="btn btn-out" onclick="invoiceOrder(${id})">${t('make_invoice')}</button>` : '') : ''}
       <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn-save" id="o-save" onclick="saveOrder(${id || 'null'})">${t('save')}</button>
     </div>`, 820);
@@ -603,31 +606,79 @@ async function deleteInvoice(id) {
   if (!confirm(t('confirm_delete'))) return;
   try { await api('/api/invoices/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
+// ---------- 打印单据: PO / SO / Invoice (同一套版式) ----------
+const LT_EN = { pallet: 'Pallet', truckload: 'Truckload', box: 'Box', gaylord: 'Gaylord' };
+function docWindow(title, pages) {
+  const w = window.open('', '_blank'); if (!w) { toast('Popup blocked', 'error'); return; }
+  const co = CONFIG.company || {};
+  const coLines = [co.address, [co.phone, co.email].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join('<br>');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+    body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1d2939;margin:0;padding:40px}
+    .page{max-width:820px;margin:auto}.page+.page{page-break-before:always;margin-top:60px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #8B6914;padding-bottom:16px}
+    .brand{display:flex;gap:12px;align-items:center}.brand img{width:64px;height:64px;border-radius:8px;border:2px solid #8B6914}
+    h1{margin:0;font-size:26px;color:#8B6914;letter-spacing:2px}.muted{color:#667085;font-size:12px}.lbl{color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+    .meta{margin-top:6px;font-size:12px;border-collapse:collapse;margin-left:auto}.meta td{padding:1px 0 1px 12px;border:0}
+    .grid{display:flex;gap:24px;margin-top:24px;font-size:13px;line-height:1.5}.grid>div{flex:1}
+    table.items{width:100%;border-collapse:collapse;margin-top:24px;font-size:13px}.items th{background:#FDF8ED;text-align:left;padding:8px;border-bottom:1px solid #e4e7ec}
+    .items td{padding:8px;border-bottom:1px solid #f2f4f7;vertical-align:top}.r,.items th.r{text-align:right}.tot td{font-weight:800;font-size:15px;border-top:2px solid #8B6914}
+    .sign{display:flex;gap:40px;margin-top:60px;font-size:12px}.sign div{flex:1;border-top:1px solid #98a2b3;padding-top:6px;color:#667085}
+    @media print{.np{display:none}body{padding:0}}</style></head><body>
+    ${pages.map(pg => `<div class="page">
+      <div class="top"><div class="brand"><img src="${location.origin}/logo.jpg"/><div><b style="font-size:18px">${esc(co.name || 'Bintique')}</b><div class="muted">${coLines || 'Liquidation'}</div></div></div>
+        <div style="text-align:right"><h1>${esc(pg.heading)}</h1><div><b>${esc(pg.no)}</b></div>
+        <table class="meta">${pg.meta.filter(m => m[1]).map(([k, v]) => `<tr><td class="muted">${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div></div>
+      <div class="grid">${pg.blocks.map(b => `<div><div class="lbl">${esc(b.label)}</div>${b.lines.filter(Boolean).map((l, n) => n ? esc(l) : `<b>${esc(l)}</b>`).join('<br>')}</div>`).join('')}</div>
+      <table class="items"><thead><tr>${pg.withOrderNo ? '<th>Order #</th>' : ''}<th>Description</th><th class="r">Qty</th><th class="r">Unit Price</th><th class="r">Discount</th><th class="r">Amount</th></tr></thead><tbody>
+        ${pg.lines.map(o => `<tr>${pg.withOrderNo ? `<td>${esc(o.order_no)}</td>` : ''}<td>${esc(o.title || '')}${o.category ? `<div class="muted">${esc(o.category)}</div>` : ''}</td>
+          <td class="r">${esc(o.quantity)} ${esc(LT_EN[o.load_type] || o.load_type || '')}</td><td class="r">${money(o.unit_price)}</td><td class="r">${+o.discount ? money(o.discount) : ''}</td><td class="r">${money(o.total)}</td></tr>`).join('')}
+        ${pg.totals.map(([k, v, cls]) => `<tr class="${cls || ''}"><td colspan="${pg.withOrderNo ? 5 : 4}" class="r">${esc(k)}</td><td class="r">${money(v)}</td></tr>`).join('')}
+      </tbody></table>
+      ${pg.notes ? `<p class="muted" style="margin-top:20px;white-space:pre-wrap">${esc(pg.notes)}</p>` : ''}
+      ${pg.sign ? `<div class="sign">${pg.sign.map(x => `<div>${esc(x)}</div>`).join('')}</div>` : ''}</div>`).join('')}
+    <p class="np" style="text-align:center;margin-top:30px"><button onclick="print()" style="padding:8px 24px;font-size:14px">Print / Save as PDF</button></p></body></html>`);
+  w.document.close();
+}
+const partyLines = (p, bill) => [p.name, p.contact ? 'Attn: ' + p.contact : '', (bill ? (p.bill_same !== '1' && fmtAddr(p, true)) || fmtAddr(p) : fmtAddr(p)), [p.phone, p.email].filter(Boolean).join(' · ')];
+function orderDocPage(o) {
+  const isSO = o.order_type === 'sales';
+  const party = (isSO ? CUSTOMERS.find(p => p.id === o.customer_id) : SUPPLIERS.find(p => p.id === o.supplier_id)) || { name: o.customer_name || o.supplier_name || '' };
+  const pickup = isSO && o.fulfillment === 'pickup';
+  return {
+    heading: isSO ? 'SALES ORDER' : 'PURCHASE ORDER', no: o.order_no,
+    meta: [['Date', o.order_date], [isSO ? (pickup ? 'Pickup Date' : 'Delivery Date') : 'Pickup Date', o.sched_date], ['Invoice #', o.invoice_no]],
+    blocks: isSO
+      ? [{ label: 'Bill To', lines: partyLines(party, true) }, { label: pickup ? 'Customer Pickup' : 'Ship To', lines: pickup ? [party.name, o.address] : [party.name, o.address || fmtAddr(party)] }]
+      : [{ label: 'Vendor', lines: partyLines(party, true) }, { label: 'Pickup Location', lines: [party.name, o.address || fmtAddr(party)] }],
+    lines: [o], totals: [['Total', o.total, 'tot']], notes: o.notes,
+    sign: isSO ? ['Authorized Signature', 'Customer Signature / Date'] : ['Authorized Signature', 'Vendor Signature / Date'],
+  };
+}
+function printOrders(ids) {
+  const list = ids.map(id => ORDERS.find(o => o.id === id)).filter(Boolean);
+  if (!list.length) return toast(t('select_first'), 'error');
+  docWindow(list.length === 1 ? list[0].order_no : `${list[0].order_type === 'sales' ? 'SO' : 'PO'} x${list.length}`, list.map(orderDocPage));
+}
+function printSelected(type) { printOrders(applySort(type === 'sales' ? 'so' : 'po', orderRows(type), ORDER_GET).filter(o => SEL[type].has(o.id)).map(o => o.id)); }
 function printInvoice(id) {
   const i = INVOICES.find(x => x.id === id); if (!i) return;
   const isS = i.invoice_type === 'sales';
-  const party = (isS ? CUSTOMERS : SUPPLIERS).find(p => p.id === i.party_id) || {};
-  const addr = fmtAddr(party, party.bill_same !== '1') || fmtAddr(party);
-  const w = window.open('', '_blank'); if (!w) return toast('Popup blocked', 'error');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(i.invoice_no)}</title><style>
-    body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1d2939;padding:40px;max-width:820px;margin:auto}
-    .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #8B6914;padding-bottom:16px}
-    .brand{display:flex;gap:12px;align-items:center}.brand img{width:64px;height:64px;border-radius:8px;border:2px solid #8B6914}
-    h1{margin:0;font-size:28px;color:#8B6914;letter-spacing:2px}.muted{color:#667085;font-size:12px}
-    table{width:100%;border-collapse:collapse;margin-top:24px;font-size:13px}th{background:#FDF8ED;text-align:left;padding:8px;border-bottom:1px solid #e4e7ec}
-    td{padding:8px;border-bottom:1px solid #f2f4f7}.r{text-align:right}.tot td{font-weight:800;font-size:15px;border-top:2px solid #8B6914}
-    .grid{display:flex;justify-content:space-between;margin-top:24px;font-size:13px}@media print{.np{display:none}body{padding:0}}</style></head><body>
-    <div class="top"><div class="brand"><img src="${location.origin}/logo.jpg"/><div><b style="font-size:18px">Bintique</b><div class="muted">Liquidation</div></div></div>
-      <div style="text-align:right"><h1>${isS ? t('inv_sales') : t('inv_purchase')}</h1><div><b>${esc(i.invoice_no)}</b></div><div class="muted">Date: ${esc(i.invoice_date || '')}${i.due_date ? '<br>Due: ' + esc(i.due_date) : ''}</div></div></div>
-    <div class="grid"><div><div class="muted">${isS ? t('bill_to') : t('vendor')}</div><b>${esc(party.name || i.party_name || '')}</b><br>${esc(addr)}<br>${esc([party.phone, party.email].filter(Boolean).join(' · '))}</div>
-      ${i.their_invoice_no ? `<div style="text-align:right"><div class="muted">Ref</div>${esc(i.their_invoice_no)}</div>` : ''}</div>
-    <table><thead><tr><th>Order #</th><th>Description</th><th class="r">Qty</th><th class="r">Unit Price</th><th class="r">Discount</th><th class="r">Amount</th></tr></thead><tbody>
-      ${i.orders.map(o => `<tr><td>${esc(o.order_no)}</td><td>${esc(o.title || '')}</td><td class="r">${esc(o.quantity)} ${esc(o.load_type || '')}</td><td class="r">${money(o.unit_price)}</td><td class="r">${o.discount ? money(o.discount) : ''}</td><td class="r">${money(o.total)}</td></tr>`).join('')}
-      <tr class="tot"><td colspan="5" class="r">Total</td><td class="r">${money(i.total)}</td></tr>
-      ${+i.paid_amount ? `<tr><td colspan="5" class="r">Paid</td><td class="r">${money(i.paid_amount)}</td></tr><tr><td colspan="5" class="r"><b>Balance Due</b></td><td class="r"><b>${money(invBalance(i))}</b></td></tr>` : ''}
-    </tbody></table>${i.notes ? `<p class="muted" style="margin-top:20px;white-space:pre-wrap">${esc(i.notes)}</p>` : ''}
-    <p class="np" style="margin-top:30px"><button onclick="print()">Print</button></p></body></html>`);
-  w.document.close();
+  const party = (isS ? CUSTOMERS : SUPPLIERS).find(p => p.id === i.party_id) || { name: i.party_name || '' };
+  const ship = isS ? [...new Set(i.orders.map(o => (ORDERS.find(x => x.id === o.id) || {}).address).filter(Boolean))] : [];
+  docWindow(i.invoice_no, [{
+    heading: isS ? t('inv_sales') : t('inv_purchase'), no: i.invoice_no, withOrderNo: true,
+    meta: [['Date', i.invoice_date], ['Due', i.due_date], ['Ref', i.their_invoice_no]],
+    blocks: [{ label: isS ? t('bill_to') : t('vendor'), lines: partyLines(party, true) }, ...(ship.length ? [{ label: 'Ship To', lines: [party.name, ...ship] }] : [])],
+    lines: i.orders,
+    totals: [['Total', i.total, 'tot'], ...(+i.paid_amount ? [['Paid', i.paid_amount], ['Balance Due', invBalance(i), 'tot']] : [])],
+    notes: i.notes,
+  }]);
+}
+async function invoiceOrder(id) {
+  try {
+    const inv = await api('/api/invoices', { method: 'POST', body: { order_ids: [id] } });
+    toast('✓ ' + inv.invoice_no); await refreshAll(); closeModal(); printInvoice(inv.id);
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 // ---------- 历史订单 (已完成 SO) ----------
