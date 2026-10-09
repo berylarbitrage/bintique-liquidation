@@ -644,11 +644,15 @@ function orderDocPage(o) {
   const isSO = o.order_type === 'sales';
   const party = (isSO ? CUSTOMERS.find(p => p.id === o.customer_id) : SUPPLIERS.find(p => p.id === o.supplier_id)) || { name: o.customer_name || o.supplier_name || '' };
   const pickup = isSO && o.fulfillment === 'pickup';
+  // 自提 SO: 提货地点 = 关联 PO 的提货地址 (没填就用那个货源的地址)
+  const po = pickup && o.po_id ? ORDERS.find(x => x.id === o.po_id) : null;
+  const poSup = po ? SUPPLIERS.find(p => p.id === po.supplier_id) : null;
+  const pickupAddr = (po && po.address) || (poSup && fmtAddr(poSup)) || '';
   return {
     heading: isSO ? 'SALES ORDER' : 'PURCHASE ORDER', no: o.order_no,
     meta: [['Date', o.order_date], [isSO ? (pickup ? 'Pickup Date' : 'Delivery Date') : 'Pickup Date', o.sched_date], ['Invoice #', o.invoice_no]],
     blocks: isSO
-      ? [{ label: 'Bill To', lines: partyLines(party, true) }, { label: pickup ? 'Customer Pickup' : 'Ship To', lines: pickup ? [party.name, o.address] : [party.name, o.address || fmtAddr(party)] }]
+      ? [{ label: 'Bill To', lines: partyLines(party, true) }, pickup ? { label: 'Pickup Location (Customer Pickup)', lines: [pickupAddr || '—'] } : { label: 'Ship To', lines: [party.name, o.address || fmtAddr(party)] }]
       : [{ label: 'Vendor', lines: partyLines(party, true) }, { label: 'Pickup Location', lines: [party.name, o.address || fmtAddr(party)] }],
     lines: [o], totals: [['Total', o.total, 'tot']], notes: o.notes,
     sign: isSO ? ['Authorized Signature', 'Customer Signature / Date'] : ['Authorized Signature', 'Vendor Signature / Date'],
