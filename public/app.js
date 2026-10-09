@@ -625,7 +625,7 @@ function docWindow(title, pages) {
     .sign{display:flex;gap:40px;margin-top:60px;font-size:12px}.sign div{flex:1;border-top:1px solid #98a2b3;padding-top:6px;color:#667085}
     @media print{.np{display:none}body{padding:0}}</style></head><body>
     ${pages.map(pg => `<div class="page">
-      <div class="top"><div class="brand"><img src="${location.origin}/logo.jpg"/><div><b style="font-size:18px">${esc(co.name || 'Bintique')}</b><div class="muted">${coLines || 'Liquidation'}</div></div></div>
+      <div class="top"><div class="brand"><img src="${location.origin}/logo.jpg"/><div><b style="font-size:18px">${esc(co.name || 'Bintique Inc')}</b><div class="muted">${coLines}</div></div></div>
         <div style="text-align:right"><h1>${esc(pg.heading)}</h1><div><b>${esc(pg.no)}</b></div>
         <table class="meta">${pg.meta.filter(m => m[1]).map(([k, v]) => `<tr><td class="muted">${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div></div>
       <div class="grid">${pg.blocks.map(b => `<div><div class="lbl">${esc(b.label)}</div>${b.lines.filter(Boolean).map((l, n) => n ? esc(l) : `<b>${esc(l)}</b>`).join('<br>')}</div>`).join('')}</div>
@@ -644,11 +644,15 @@ function orderDocPage(o) {
   const isSO = o.order_type === 'sales';
   const party = (isSO ? CUSTOMERS.find(p => p.id === o.customer_id) : SUPPLIERS.find(p => p.id === o.supplier_id)) || { name: o.customer_name || o.supplier_name || '' };
   const pickup = isSO && o.fulfillment === 'pickup';
+  // 自提 SO: 提货地点 = 关联 PO 的提货地址 (没填就用那个货源的地址)
+  const po = pickup && o.po_id ? ORDERS.find(x => x.id === o.po_id) : null;
+  const poSup = po ? SUPPLIERS.find(p => p.id === po.supplier_id) : null;
+  const pickupAddr = (po && po.address) || (poSup && fmtAddr(poSup)) || '';
   return {
     heading: isSO ? 'SALES ORDER' : 'PURCHASE ORDER', no: o.order_no,
     meta: [['Date', o.order_date], [isSO ? (pickup ? 'Pickup Date' : 'Delivery Date') : 'Pickup Date', o.sched_date], ['Invoice #', o.invoice_no]],
     blocks: isSO
-      ? [{ label: 'Bill To', lines: partyLines(party, true) }, { label: pickup ? 'Customer Pickup' : 'Ship To', lines: pickup ? [party.name, o.address] : [party.name, o.address || fmtAddr(party)] }]
+      ? [{ label: 'Bill To', lines: partyLines(party, true) }, pickup ? { label: 'Pickup Location (Customer Pickup)', lines: [pickupAddr || '—'] } : { label: 'Ship To', lines: [party.name, o.address || fmtAddr(party)] }]
       : [{ label: 'Vendor', lines: partyLines(party, true) }, { label: 'Pickup Location', lines: [party.name, o.address || fmtAddr(party)] }],
     lines: [o], totals: [['Total', o.total, 'tot']], notes: o.notes,
     sign: isSO ? ['Authorized Signature', 'Customer Signature / Date'] : ['Authorized Signature', 'Vendor Signature / Date'],
