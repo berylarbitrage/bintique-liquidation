@@ -11,7 +11,7 @@ const I18N = {
     truck_orders: '卡车订单', truck_quotes: '卡车明细', truck_history: '租车历史', users: '用户',
     monthly_pl: '每月 销售额 / 成本 / 毛利', so_status: 'SO 状态', top_customers: '买家排行 (销售额)', top_suppliers: '货源排行 (毛利)', recent_orders: '最近订单',
     search: '搜索...', export_csv: '导出 CSV', new_order: '+ New Order', add_supplier: '+ Add Supplier', add_customer: '+ Add Customer', add_user: '+ 新增用户',
-    move_checkout: 'Move to Checkout', make_invoice: '生成发票', print_sel: '打印', print_so: '打印 SO', print_po: '打印 PO', print_inv: '打印发票', select_first: '请先选择订单', refresh: '刷新',
+    move_checkout: 'Move to Checkout', make_invoice: '生成发票', print_sel: '打印', print_so: '打印 SO', print_po: '打印 PO', print_inv: '打印发票', inv_settings: '⚙ 发票设置', select_first: '请先选择订单', refresh: '刷新',
     th_order: '订单号', th_supplier: '货源', th_customer: '买家', th_desc: '货物描述', th_qty: '数量', th_total: '金额', th_extra: '额外支出', th_truck: '卡车费', th_cost: '总成本',
     th_pickup_date: '提货日期', th_delivery_date: '送货日期', th_status: '状态', th_sold_to: '卖出 (SO)', th_profit: '毛利', th_margin: '毛利率', th_payment: '付款',
     th_po: '关联 PO', th_cost_share: '成本 (分摊)', th_fulfillment: '送货/自提', th_date: '日期', th_type: '类型',
@@ -53,7 +53,7 @@ const I18N = {
     truck_orders: 'Truck Orders', truck_quotes: 'Truck Details', truck_history: 'Rental History', users: 'Users',
     monthly_pl: 'Monthly Revenue / Cost / Profit', so_status: 'SO Status', top_customers: 'Top Customers (Revenue)', top_suppliers: 'Top Suppliers (Profit)', recent_orders: 'Recent Orders',
     search: 'Search...', export_csv: 'Export CSV', new_order: '+ New Order', add_supplier: '+ Add Supplier', add_customer: '+ Add Customer', add_user: '+ Add User',
-    move_checkout: 'Move to Checkout', make_invoice: 'Create Invoice', print_sel: 'Print', print_so: 'Print SO', print_po: 'Print PO', print_inv: 'Print Invoice', select_first: 'Please select orders first', refresh: 'Refresh',
+    move_checkout: 'Move to Checkout', make_invoice: 'Create Invoice', print_sel: 'Print', print_so: 'Print SO', print_po: 'Print PO', print_inv: 'Print Invoice', inv_settings: '⚙ Invoice Settings', select_first: 'Please select orders first', refresh: 'Refresh',
     th_order: 'Order #', th_supplier: 'Supplier', th_customer: 'Customer', th_desc: 'Description', th_qty: 'Qty', th_total: 'Amount', th_extra: 'Extra Expense', th_truck: 'Truck', th_cost: 'Total Cost',
     th_pickup_date: 'Pickup Date', th_delivery_date: 'Delivery Date', th_status: 'Status', th_sold_to: 'Sold (SO)', th_profit: 'Profit', th_margin: 'Margin', th_payment: 'Payment',
     th_po: 'Linked PO', th_cost_share: 'Cost (share)', th_fulfillment: 'Delivery/Pickup', th_date: 'Date', th_type: 'Type',
@@ -623,6 +623,13 @@ function docWindow(title, pages) {
     table.items{width:100%;border-collapse:collapse;margin-top:24px;font-size:13px}.items th{background:#FDF8ED;text-align:left;padding:8px;border-bottom:1px solid #e4e7ec}
     .items td{padding:8px;border-bottom:1px solid #f2f4f7;vertical-align:top}.r,.items th.r{text-align:right}.tot td{font-weight:800;font-size:15px;border-top:2px solid #8B6914}
     .sign{display:flex;gap:40px;margin-top:60px;font-size:12px}.sign div{flex:1;border-top:1px solid #98a2b3;padding-top:6px;color:#667085}
+    .sub{width:300px;margin:14px 0 0 auto;font-size:13px}.sub div{display:flex;justify-content:space-between;padding:3px 8px}.sub .t{font-weight:800;font-size:15px;border-top:2px solid #8B6914;margin-top:4px;padding-top:7px}
+    .due{display:flex;justify-content:space-between;align-items:center;background:#FDF8ED;border:1px solid #e9d8a6;border-radius:8px;padding:12px 16px;margin-top:18px}
+    .due .lbl{font-weight:800;color:#6B4F0E;font-size:13px;text-transform:none;letter-spacing:0;margin:0}.due .amt{font-size:22px;font-weight:800;color:#6B4F0E}
+    .pay{margin-top:20px}.pay-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#667085;margin-bottom:8px}
+    .pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pay-m{border:1px solid #e4e7ec;border-radius:8px;padding:10px 12px;font-size:12px}
+    .pay-m h4{margin:0 0 4px;font-size:13px;color:#8B6914}.pay-m p{margin:1px 0}
+    .terms{margin-top:18px;font-size:11px;color:#475467;line-height:1.6}.footer{margin-top:24px;padding-top:10px;border-top:1px solid #e4e7ec;text-align:center;font-size:11px;color:#98a2b3}
     @media print{.np{display:none}body{padding:0}}</style></head><body>
     ${pages.map(pg => `<div class="page">
       <div class="top"><div class="brand"><img src="${location.origin}/logo.jpg"/><div><b style="font-size:18px">${esc(co.name || 'Bintique Inc')}</b><div class="muted">${coLines}</div></div></div>
@@ -634,8 +641,10 @@ function docWindow(title, pages) {
           <td class="r">${esc(o.quantity)} ${esc(LT_EN[o.load_type] || o.load_type || '')}</td><td class="r">${money(o.unit_price)}</td><td class="r">${+o.discount ? money(o.discount) : ''}</td><td class="r">${money(o.total)}</td></tr>`).join('')}
         ${pg.totals.map(([k, v, cls]) => `<tr class="${cls || ''}"><td colspan="${pg.withOrderNo ? 5 : 4}" class="r">${esc(k)}</td><td class="r">${money(v)}</td></tr>`).join('')}
       </tbody></table>
+      ${pg.after || ''}
       ${pg.notes ? `<p class="muted" style="margin-top:20px;white-space:pre-wrap">${esc(pg.notes)}</p>` : ''}
-      ${pg.sign ? `<div class="sign">${pg.sign.map(x => `<div>${esc(x)}</div>`).join('')}</div>` : ''}</div>`).join('')}
+      ${pg.sign ? `<div class="sign">${pg.sign.map(x => `<div>${esc(x)}</div>`).join('')}</div>` : ''}
+      ${pg.footer ? `<div class="footer">${esc(pg.footer)}</div>` : ''}</div>`).join('')}
     <p class="np" style="text-align:center;margin-top:30px"><button onclick="print()" style="padding:8px 24px;font-size:14px">Print / Save as PDF</button></p></body></html>`);
   w.document.close();
 }
@@ -664,19 +673,52 @@ function printOrders(ids) {
   docWindow(list.length === 1 ? list[0].order_no : `${list[0].order_type === 'sales' ? 'SO' : 'PO'} x${list.length}`, list.map(orderDocPage));
 }
 function printSelected(type) { printOrders(applySort(type === 'sales' ? 'so' : 'po', orderRows(type), ORDER_GET).filter(o => SEL[type].has(o.id)).map(o => o.id)); }
+// 发票版式照 pallet: Terms / Currency, Subtotal + Sales Tax, Amount Due, 付款方式, 条款, 页脚
 function printInvoice(id) {
   const i = INVOICES.find(x => x.id === id); if (!i) return;
   const isS = i.invoice_type === 'sales';
   const party = (isS ? CUSTOMERS : SUPPLIERS).find(p => p.id === i.party_id) || { name: i.party_name || '' };
   const ship = isS ? [...new Set(i.orders.map(o => (ORDERS.find(x => x.id === o.id) || {}).address).filter(Boolean))] : [];
+  const bal = invBalance(i), paid = +i.paid_amount || 0;
+  const row = (k, v, cls = '') => `<div class="${cls}"><span>${k}</span><span>${v}</span></div>`;
+  const pay = isS ? (CONFIG.payment || []).filter(m => m.on && m.title) : [];
+  const terms = isS && CONFIG.terms ? esc(CONFIG.terms).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>') : '';
   docWindow(i.invoice_no, [{
     heading: isS ? t('inv_sales') : t('inv_purchase'), no: i.invoice_no, withOrderNo: true,
-    meta: [['Date', i.invoice_date], ['Due', i.due_date], ['Ref', i.their_invoice_no]],
-    blocks: [{ label: isS ? t('bill_to') : t('vendor'), lines: partyLines(party, true) }, ...(ship.length ? [{ label: 'Ship To', lines: [party.name, ...ship] }] : [])],
-    lines: i.orders,
-    totals: [['Total', i.total, 'tot'], ...(+i.paid_amount ? [['Paid', i.paid_amount], ['Balance Due', invBalance(i), 'tot']] : [])],
-    notes: i.notes,
+    meta: [['Invoice Date:', i.invoice_date], ['Due Date:', i.due_date || i.invoice_date], ['Terms:', i.due_date && i.due_date !== i.invoice_date ? 'Due by ' + i.due_date : 'Due on Receipt'],
+      ['Ref:', i.their_invoice_no], ['Currency:', 'USD']],
+    blocks: [{ label: isS ? t('bill_to') : t('vendor'), lines: partyLines(party, true) }, ...(ship.length ? [{ label: 'Delivery Address', lines: [party.name, ...ship] }] : [])],
+    lines: i.orders, totals: [],
+    after: `<div class="sub">${row('Subtotal', money(i.total))}${row('Sales Tax', money(0))}${row('<span class="muted" style="font-size:10px">No sales tax charged</span>', '')}
+        ${row('TOTAL DUE (USD)', money(i.total), 't')}${paid ? row('Paid', '−' + money(paid)) + row('<b>Balance Due</b>', `<b>${money(bal)}</b>`) : ''}</div>
+      ${isS ? `<div class="due"><div><div class="lbl">${bal > 0 ? 'Amount Due' : 'Paid in Full'}</div><div class="muted" style="color:#92400e;margin-top:2px">${bal > 0 ? (i.due_date && i.due_date !== i.invoice_date ? 'Payment due by ' + esc(i.due_date) : 'Payment due upon receipt of invoice') : 'Thank you for your payment'}</div></div><div class="amt">${money(bal)}</div></div>` : ''}
+      ${pay.length ? `<div class="pay"><div class="pay-title">Payment Methods / Remittance Instructions</div><div class="pay-grid">${pay.map(m =>
+        `<div class="pay-m"><h4>${esc(m.title)}</h4>${[m.l1, m.l2, m.l3].filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('')}</div>`).join('')}</div></div>` : ''}
+      ${terms ? `<div class="terms">${terms}</div>` : ''}`,
+    notes: i.notes, footer: isS ? CONFIG.footer : '',
   }]);
+}
+// 发票设置 (管理员): 抬头 / 付款方式 / 条款 / 页脚, 存在服务器上, 所有人打印都用这一份
+function openInvSettings() {
+  const c = CONFIG.company || {}, pay = [0, 1, 2].map(n => (CONFIG.payment || [])[n] || { title: '', l1: '', l2: '', l3: '', on: false });
+  openModal(LANG === 'zh' ? '发票设置' : 'Invoice Settings', `
+    <div class="modal-section">${LANG === 'zh' ? '抬头 (公司)' : 'Header (company)'}</div>
+    <div class="modal-row">${field(t('name'), inp('is-name', c.name))}${field(t('phone'), inp('is-phone', c.phone))}</div>
+    <div class="modal-row">${field(LANG === 'zh' ? '地址' : 'Address', inp('is-address', c.address))}${field(t('email'), inp('is-email', c.email))}</div>
+    <div class="modal-section">${LANG === 'zh' ? '付款方式 (打印在销售发票上)' : 'Payment methods (printed on sales invoices)'}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${pay.map((m, n) => `<div style="border:1px solid var(--g200);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:5px">
+      <label style="font-size:11px;font-weight:600;display:flex;gap:5px;align-items:center"><input type="checkbox" id="is-p${n}-on" ${m.on ? 'checked' : ''}/>${LANG === 'zh' ? '显示' : 'Show'}</label>
+      ${inp(`is-p${n}-title`, m.title, 'text', 'placeholder="Zelle / ACH / Wire…" style="font-weight:700"')}${inp(`is-p${n}-l1`, m.l1)}${inp(`is-p${n}-l2`, m.l2)}${inp(`is-p${n}-l3`, m.l3)}</div>`).join('')}</div>
+    <div class="modal-row" style="margin-top:10px">${field(LANG === 'zh' ? '条款 (**粗体**)' : 'Terms (**bold**)', `<textarea class="modal-input" id="is-terms" rows="3">${esc(CONFIG.terms || '')}</textarea>`, true)}</div>
+    <div class="modal-row">${field(LANG === 'zh' ? '页脚' : 'Footer', inp('is-footer', CONFIG.footer), true)}</div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button><button class="btn-save" onclick="saveInvSettings()">${t('save')}</button></div>`, 760);
+}
+async function saveInvSettings() {
+  const v = k => $('is-' + k).value.trim();
+  const body = { company: { name: v('name'), address: v('address'), phone: v('phone'), email: v('email') },
+    payment: [0, 1, 2].map(n => ({ title: v(`p${n}-title`), l1: v(`p${n}-l1`), l2: v(`p${n}-l2`), l3: v(`p${n}-l3`), on: $(`is-p${n}-on`).checked })),
+    terms: $('is-terms').value.trim(), footer: v('footer') };
+  try { await api('/api/settings', { method: 'PUT', body }); Object.assign(CONFIG, body); closeModal(); toast(t('saved')); } catch (e) { toast(e.message, 'error'); }
 }
 async function invoiceOrder(id) {
   try {

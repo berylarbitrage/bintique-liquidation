@@ -690,13 +690,38 @@ app.get('/api/files/:name', auth, (req, res) => {
   res.sendFile(p);
 });
 
+// ---------- 发票设置 (抬头 / 付款方式 / 条款 / 页脚), 默认值照 pallet 的 Bintique Inc ----------
+db.exec('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)');
+const INV_DEFAULTS = {
+  company: { name: process.env.COMPANY_NAME || 'Bintique Inc', address: process.env.COMPANY_ADDRESS || '18 Congress Circle West, Roselle, IL 60172',
+    phone: process.env.COMPANY_PHONE || '(708) 850-2703', email: process.env.COMPANY_EMAIL || 'billing@bintique.com' },
+  payment: [
+    { title: 'Zelle', l1: 'info@surpluslane.com', l2: 'Please include invoice # as memo', l3: '', on: true },
+    { title: 'ACH / Direct Deposit', l1: 'Bank of America', l2: 'Routing: 071000505', l3: 'Account: 291042157814', on: true },
+    { title: 'Wire Transfer', l1: 'Bank of America', l2: 'Wire Routing: 026009593', l3: 'Account: 291042157814', on: true },
+  ],
+  terms: '**Terms & Conditions:** Payment is due upon receipt of this invoice. A late fee of 1.5% per month may apply to overdue balances. Please include the invoice number with your payment for proper credit.',
+  footer: 'Thank you for your business • Bintique Inc • (708) 850-2703 • billing@bintique.com',
+};
+function getSetting(k) {
+  const r = db.prepare('SELECT value FROM settings WHERE key = ?').get(k);
+  if (!r) return INV_DEFAULTS[k];
+  try { return JSON.parse(r.value); } catch (e) { return INV_DEFAULTS[k]; }
+}
+app.put('/api/settings', auth, adminOnly, (req, res) => {
+  const b = req.body || {};
+  const up = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
+  for (const k of Object.keys(INV_DEFAULTS)) if (b[k] !== undefined) up.run(k, JSON.stringify(b[k]));
+  audit(req, 'settings', 0, 'update', b);
+  res.json({ ok: true });
+});
+
 // 地址验证: 优先 Google (Railway 环境变量 GOOGLE_MAPS_API_KEY, 需开通 Geocoding API), 否则用 Mapbox (MAPBOX_TOKEN)
 app.get('/api/config', auth, (req, res) => res.json({
   geocoder: process.env.GOOGLE_MAPS_API_KEY ? 'google' : (process.env.MAPBOX_TOKEN ? 'mapbox' : ''),
   mapbox_token: process.env.GOOGLE_MAPS_API_KEY ? '' : (process.env.MAPBOX_TOKEN || ''),
-  // 打印 PO / SO / 发票 抬头上的公司信息
-  company: { name: process.env.COMPANY_NAME || 'Bintique Inc', address: process.env.COMPANY_ADDRESS || '18 Congress Circle West, Roselle, IL 60172',
-    phone: process.env.COMPANY_PHONE || '(708) 850-2703', email: process.env.COMPANY_EMAIL || 'billing@bintique.com' },
+  // 打印 PO / SO / 发票: 抬头、付款方式、条款、页脚
+  company: getSetting('company'), payment: getSetting('payment'), terms: getSetting('terms'), footer: getSetting('footer'),
 }));
 
 // Google Geocoding 走后端代理, key 不暴露给浏览器
