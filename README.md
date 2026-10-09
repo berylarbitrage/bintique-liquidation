@@ -12,7 +12,7 @@
 | 菜单 | 内容 |
 |---|---|
 | 总览 Dashboard | 销售额、销售成本、毛利、毛利率、采购额、未卖出 PO、待收款、待付款、卡车费用；按年/月筛选；图表 |
-| Suppliers / Customers | 货源 / 买家；Mapbox 地址验证（未验证不能保存）；买家选 送货 / 自提 |
+| Suppliers / Customers | 货源 / 买家；Google Maps 地址验证（未验证不能保存；没设 Google key 时退回 Mapbox）；买家选 送货 / 自提 |
 | PO Orders / SO Orders | 订单列表、筛选、导出 CSV；勾选同一个客户/货源的订单 → 生成发票 或 Move to Checkout；PO 里点「卖出」直接建 SO |
 | 销售发票 / 采购发票 | 发票列表、记录付款（付清后订单自动变已完成）、回执上传、打印发票 |
 | 历史订单 | 已完成的 SO，带成本、毛利、卡车 |
@@ -34,7 +34,7 @@ npm start
 ## 部署到 Railway
 1. 在 Railway 新建项目 → 连接本仓库
 2. 添加 Volume，挂载路径 `/data`（SQLite 数据库存在这里）
-3. 环境变量：`ADMIN_USER=admin`、`ADMIN_PASS=<强密码>`；`MAPBOX_TOKEN=<和 pallet 用的同一个 pk. 开头的 token>`（地址验证要用，没设的话「验证」按钮会提示）
+3. 环境变量：`ADMIN_USER=admin`、`ADMIN_PASS=<强密码>`；`GOOGLE_MAPS_API_KEY=<Google Cloud API key，需开通 Geocoding API>`（地址验证要用，没设的话「验证」按钮会提示；也可以只设 `MAPBOX_TOKEN` 继续用 Mapbox）
    卡车收据文件存在 `/data/uploads`
 4. Deploy
 
