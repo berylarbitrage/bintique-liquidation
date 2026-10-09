@@ -35,7 +35,7 @@ npm start
 1. 在 Railway 新建项目 → 连接本仓库
 2. 添加 Volume，挂载路径 `/data`（SQLite 数据库存在这里）
 3. 环境变量：`ADMIN_USER=admin`、`ADMIN_PASS=<强密码>`；`GOOGLE_MAPS_API_KEY=<Google Cloud API key，需开通 Geocoding API>`（地址验证要用，没设的话「验证」按钮会提示；也可以只设 `MAPBOX_TOKEN` 继续用 Mapbox）
-   打印单据抬头的公司信息（可选）：`COMPANY_NAME`、`COMPANY_ADDRESS`、`COMPANY_PHONE`、`COMPANY_EMAIL`
+   打印单据抬头的公司信息（可选，默认 Bintique Inc · 18 Congress Circle West, Roselle, IL 60172 · (708) 850-2703 · billing@bintique.com，和 pallet 一样）：`COMPANY_NAME`、`COMPANY_ADDRESS`、`COMPANY_PHONE`、`COMPANY_EMAIL`
    卡车收据文件存在 `/data/uploads`
 4. Deploy
 

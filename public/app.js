@@ -625,7 +625,7 @@ function docWindow(title, pages) {
     .sign{display:flex;gap:40px;margin-top:60px;font-size:12px}.sign div{flex:1;border-top:1px solid #98a2b3;padding-top:6px;color:#667085}
     @media print{.np{display:none}body{padding:0}}</style></head><body>
     ${pages.map(pg => `<div class="page">
-      <div class="top"><div class="brand"><img src="${location.origin}/logo.jpg"/><div><b style="font-size:18px">${esc(co.name || 'Bintique')}</b><div class="muted">${coLines || 'Liquidation'}</div></div></div>
+      <div class="top"><div class="brand"><img src="${location.origin}/logo.jpg"/><div><b style="font-size:18px">${esc(co.name || 'Bintique Inc')}</b><div class="muted">${coLines}</div></div></div>
         <div style="text-align:right"><h1>${esc(pg.heading)}</h1><div><b>${esc(pg.no)}</b></div>
         <table class="meta">${pg.meta.filter(m => m[1]).map(([k, v]) => `<tr><td class="muted">${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div></div>
       <div class="grid">${pg.blocks.map(b => `<div><div class="lbl">${esc(b.label)}</div>${b.lines.filter(Boolean).map((l, n) => n ? esc(l) : `<b>${esc(l)}</b>`).join('<br>')}</div>`).join('')}</div>

@@ -695,7 +695,8 @@ app.get('/api/config', auth, (req, res) => res.json({
   geocoder: process.env.GOOGLE_MAPS_API_KEY ? 'google' : (process.env.MAPBOX_TOKEN ? 'mapbox' : ''),
   mapbox_token: process.env.GOOGLE_MAPS_API_KEY ? '' : (process.env.MAPBOX_TOKEN || ''),
   // 打印 PO / SO / 发票 抬头上的公司信息
-  company: { name: process.env.COMPANY_NAME || 'Bintique', address: process.env.COMPANY_ADDRESS || '', phone: process.env.COMPANY_PHONE || '', email: process.env.COMPANY_EMAIL || '' },
+  company: { name: process.env.COMPANY_NAME || 'Bintique Inc', address: process.env.COMPANY_ADDRESS || '18 Congress Circle West, Roselle, IL 60172',
+    phone: process.env.COMPANY_PHONE || '(708) 850-2703', email: process.env.COMPANY_EMAIL || 'billing@bintique.com' },
 }));
 
 // Google Geocoding 走后端代理, key 不暴露给浏览器
