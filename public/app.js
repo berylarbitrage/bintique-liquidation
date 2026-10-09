@@ -27,6 +27,17 @@ const I18N = {
     save: '保存', cancel: '取消', delete: '删除', sell: '卖出', receive: '收款', edit: '编辑', none: '— 无 —', new_party: '+ 新建…',
     confirm_delete: '确定删除？此操作不可恢复。', saved: '已保存', deleted: '已删除', no_data: '暂无数据',
     receive_amount: '本次收款金额', new_password: '新密码 (留空不改)', admin: '管理员', staff: '员工', edit_lot: '编辑弃货', new_lot_title: '新增一拖弃货',
+    sec_pay: '付款', f_tb_method: '付款方式',
+    trucks: '卡车账单', add_truck_bill: '+ 新增卡车账单', new_truck_bill: '新增卡车账单', edit_truck_bill: '编辑卡车账单',
+    th_bill: '账单号', th_truck_co: '卡车公司', th_dates: '用车日期', th_amount: '金额', th_purpose: '用途', th_lots: '关联弃货', th_paid_by: '付款人', th_invoice: '对方 Invoice', th_receipt: '收据',
+    tp_pickup: '进货提货', tp_delivery: '送货', tp_other: '其他', tb_unpaid: '未付', tb_paid: '已付', all_companies: '全部卡车公司', all_purposes: '全部用途',
+    f_truck_co: '卡车公司', f_state: '州', f_date_start: '开始日期', f_date_end: '结束日期', f_amount: '金额', f_purpose: '用途', f_invoice: '对方 Invoice #', f_paid_by: '付款人', f_paid_date: '付款日期', f_tb_status: '付款状态',
+    f_link_lots: '关联哪几拖货 (金额平摊进这几拖的成本)', per_lot: '每拖分摊', receipts: '收据 / 发票', upload: '上传', unallocated: '未关联弃货, 不计入任何一拖成本',
+    f_truck_cost: '卡车费 (来自卡车账单)', s_truck: '卡车费用', s_truck_unpaid: '未付卡车费', truck_unalloc: '未分摊卡车费', save_first: '先保存账单再上传收据',
+    sec_address: '地址', ship_addr: '收货地址 (Shipping)', bill_addr: '账单地址 (Billing)', pickup_addr: '提货地址 (Pickup)', bill_same: '账单地址与收货地址相同', bill_same_sup: '账单地址与提货地址相同',
+    addr1: '地址 1', addr2: '地址 2 (可选)', city: '城市', zip: '邮编', verify: '验证', verified: '已验证', unverified: '未验证', verifying: '验证中...', addr_not_found: '找不到这个地址', select_match: '个匹配, 请选择:', net_err: '网络错误',
+    need_verify: '请先验证所有地址 / Please verify all addresses', need_ship: '送货的买家必须填收货地址',
+    delivery_method: '送货方式', dm_delivery: '送货', dm_pickup: '自提', f_fulfillment: '送货 / 自提', f_delivery_date: '送货日期', f_delivery_addr: '送货地址', th_fulfillment: '送货/自提', th_location_city: '城市 / 州',
   },
   en: {
     login_sub: 'Liquidation Management System', username: 'Username', password: 'Password', sign_in: 'Sign In', sign_out: 'Sign Out',
@@ -51,6 +62,17 @@ const I18N = {
     save: 'Save', cancel: 'Cancel', delete: 'Delete', sell: 'Sell', receive: 'Receive', edit: 'Edit', none: '— None —', new_party: '+ New…',
     confirm_delete: 'Delete this? This cannot be undone.', saved: 'Saved', deleted: 'Deleted', no_data: 'No data',
     receive_amount: 'Amount received now', new_password: 'New password (blank = keep)', admin: 'Admin', staff: 'Staff', edit_lot: 'Edit Load', new_lot_title: 'New Liquidation Load',
+    sec_pay: 'Payment', f_tb_method: 'Payment Method',
+    trucks: 'Truck Bills', add_truck_bill: '+ Add Truck Bill', new_truck_bill: 'New Truck Bill', edit_truck_bill: 'Edit Truck Bill',
+    th_bill: 'Bill #', th_truck_co: 'Truck Company', th_dates: 'Dates', th_amount: 'Amount', th_purpose: 'Purpose', th_lots: 'Linked Loads', th_paid_by: 'Paid By', th_invoice: 'Their Invoice', th_receipt: 'Receipt',
+    tp_pickup: 'Pickup (buying)', tp_delivery: 'Delivery', tp_other: 'Other', tb_unpaid: 'Unpaid', tb_paid: 'Paid', all_companies: 'All Companies', all_purposes: 'All Purposes',
+    f_truck_co: 'Truck Company', f_state: 'State', f_date_start: 'Start Date', f_date_end: 'End Date', f_amount: 'Amount', f_purpose: 'Purpose', f_invoice: 'Their Invoice #', f_paid_by: 'Paid By', f_paid_date: 'Paid Date', f_tb_status: 'Payment Status',
+    f_link_lots: 'Linked loads (amount is split evenly into their cost)', per_lot: 'Per load', receipts: 'Receipts / Invoices', upload: 'Upload', unallocated: 'Not linked to any load — not in any load cost',
+    f_truck_cost: 'Truck cost (from truck bills)', s_truck: 'Truck Cost', s_truck_unpaid: 'Unpaid Truck Bills', truck_unalloc: 'Unallocated Truck Cost', save_first: 'Save the bill first, then upload receipts',
+    sec_address: 'Address', ship_addr: 'Shipping Address', bill_addr: 'Billing Address', pickup_addr: 'Pickup Address', bill_same: 'Billing Address same as Shipping Address', bill_same_sup: 'Billing Address same as Pickup Address',
+    addr1: 'Address 1', addr2: 'Address 2 (optional)', city: 'City', zip: 'Zipcode', verify: 'Verify', verified: 'Verified', unverified: 'Unverified', verifying: 'Verifying...', addr_not_found: 'Address not found', select_match: 'matches, select:', net_err: 'Network error',
+    need_verify: 'Please verify all addresses before saving', need_ship: 'Delivery customers need a shipping address',
+    delivery_method: 'Delivery Method', dm_delivery: 'Delivery', dm_pickup: 'Customer Pickup', f_fulfillment: 'Delivery / Pickup', f_delivery_date: 'Delivery Date', f_delivery_addr: 'Delivery Address', th_fulfillment: 'Delivery/Pickup', th_location_city: 'City / State',
   },
 };
 let LANG = 'zh';
@@ -93,7 +115,7 @@ async function api(url, opts = {}) {
 
 // derived fields per lot
 function calc(l) {
-  const cost = (+l.purchase_cost || 0) + (+l.freight_cost || 0) + (+l.labor_cost || 0) + (+l.other_cost || 0);
+  const cost = (+l.purchase_cost || 0) + (+l.freight_cost || 0) + (+l.labor_cost || 0) + (+l.other_cost || 0) + (+l.truck_cost || 0);
   const sold = l.status === 'sold';
   const sale = +l.sale_price || 0;
   const profit = sold ? sale - cost : null;
@@ -110,7 +132,8 @@ const chip = (label, val) => `<span class="chip">${esc(label)} <b>${val}</b></sp
 
 // ---------- state ----------
 let currentUser = null;
-let LOTS = [], SUPPLIERS = [], CUSTOMERS = [];
+let LOTS = [], SUPPLIERS = [], CUSTOMERS = [], TRUCKS = [];
+let CONFIG = {};
 const charts = {};
 
 // ---------- auth ----------
@@ -162,10 +185,10 @@ function closeMobileNav() { $('sideNav').classList.remove('open'); $('navOverlay
 // ---------- data ----------
 async function refreshAll() {
   try {
-    [LOTS, SUPPLIERS, CUSTOMERS] = await Promise.all([api('/api/lots'), api('/api/suppliers'), api('/api/customers')]);
+    [LOTS, SUPPLIERS, CUSTOMERS, TRUCKS, CONFIG] = await Promise.all([api('/api/lots'), api('/api/suppliers'), api('/api/customers'), api('/api/truck-bills'), api('/api/config')]);
   } catch (e) { if (e.message !== 'Not signed in') toast(e.message, 'error'); return; }
   fillFilters();
-  renderDashboard(); renderLots(); renderSales(); renderReceivables();
+  renderDashboard(); renderLots(); renderSales(); renderReceivables(); renderTruckBills();
   renderParties('suppliers'); renderParties('customers');
 }
 function setOptions(sel, opts, keep = true) {
@@ -181,6 +204,9 @@ function fillFilters() {
   setOptions('lot-supplier', [['', t('all_suppliers')], ...SUPPLIERS.map(s => [s.id, s.name])]);
   setOptions('sale-customer', [['', t('all_customers')], ...CUSTOMERS.map(c => [c.id, c.name])]);
   setOptions('ar-customer', [['', t('all_customers')], ...CUSTOMERS.map(c => [c.id, c.name])]);
+  setOptions('tb-status', [['', t('all_status')], ['unpaid', t('tb_unpaid')], ['paid', t('tb_paid')]]);
+  setOptions('tb-company', [['', t('all_companies')], ...truckCompanies().map(c => [c, c])]);
+  setOptions('tb-purpose', [['', t('all_purposes')], ...['pickup', 'delivery', 'other'].map(k => [k, t('tp_' + k)])]);
 }
 
 // ---------- dashboard ----------
@@ -209,7 +235,11 @@ function renderDashboard() {
     [t('s_margin'), rev ? pct(profit / rev) : '—', profit >= 0 ? 'green' : 'red'],
     [t('s_avg_profit'), sold.length ? money0(profit / sold.length) : '—', ''],
     [t('s_ar'), money0(ar), ar > 0 ? 'red' : 'green'],
+    [t('s_truck'), money0(TRUCKS.filter(b => inPeriod(b.date_start)).reduce((a, b) => a + (+b.amount || 0), 0)), 'orange'],
+    [t('s_truck_unpaid'), money0(TRUCKS.filter(b => b.status !== 'paid').reduce((a, b) => a + (+b.amount || 0), 0)), 'red'],
   ];
+  const unalloc = TRUCKS.filter(b => !b.lots.length && inPeriod(b.date_start)).reduce((a, b) => a + (+b.amount || 0), 0);
+  if (unalloc) cards.push([t('truck_unalloc'), money0(unalloc), 'red']);
   $('stats-grid').innerHTML = cards.map(([l, v, c]) => `<div class="stat-card"><div class="label">${esc(l)}</div><div class="value ${c}">${v}</div></div>`).join('');
 
   // monthly (last 12 months that have data, or chosen year)
@@ -315,7 +345,7 @@ function renderLots() {
       <td><div class="tdn" style="font-weight:500">${esc(l.title || '')}</div>${l.category ? `<div class="tdct">${esc(l.category)}</div>` : ''}</td>
       <td>${esc(l.supplier_name || '—')}</td><td>${esc(l.acquired_date || '')}</td>
       <td class="num">${esc(unit)}</td><td class="num">${money(c.cost)}</td><td class="num">${l.asking_price ? money(l.asking_price) : '—'}</td>
-      <td>${statusBadge(l.status)}</td><td>${esc(l.customer_name || '')}</td>
+      <td>${statusBadge(l.status)}</td><td>${esc(l.customer_name || '')}${l.fulfillment ? `<div class="tdct">${esc(t('dm_' + l.fulfillment))}${l.delivery_date ? ' · ' + esc(l.delivery_date) : ''}</div>` : ''}</td>
       <td class="num">${l.status === 'sold' ? money(c.sale) : ''}</td>
       <td class="num ${plCls(c.profit)}">${c.profit !== null ? money(c.profit) : ''}</td>
       <td class="num">${c.days ?? ''}</td><td>${act}</td></tr>`;
@@ -327,8 +357,8 @@ function csv(name, header, rows) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name}-${today()}.csv`; a.click();
 }
 function exportLots() {
-  csv('liquidation-loads', ['Lot #', 'Description', 'Category', 'Unit', 'Qty', 'Supplier', 'Acquired', 'Purchase', 'Freight', 'Labor', 'Other', 'Total Cost', 'Asking', 'Status', 'Customer', 'Sold Date', 'Sale Price', 'Profit', 'Received', 'Balance', 'Location', 'Notes'],
-    LOTS.map(l => { const c = calc(l); return [l.lot_no, l.title, l.category, l.load_type, l.quantity, l.supplier_name, l.acquired_date, l.purchase_cost, l.freight_cost, l.labor_cost, l.other_cost, c.cost.toFixed(2), l.asking_price, l.status, l.customer_name, l.sold_date, l.status === 'sold' ? c.sale : '', c.profit !== null ? c.profit.toFixed(2) : '', c.received, c.balance.toFixed(2), l.location, l.notes]; }));
+  csv('liquidation-loads', ['Lot #', 'Description', 'Category', 'Unit', 'Qty', 'Supplier', 'Acquired', 'Purchase', 'Freight', 'Labor', 'Other', 'Truck (bills)', 'Total Cost', 'Asking', 'Status', 'Customer', 'Sold Date', 'Sale Price', 'Profit', 'Received', 'Balance', 'Location', 'Notes'],
+    LOTS.map(l => { const c = calc(l); return [l.lot_no, l.title, l.category, l.load_type, l.quantity, l.supplier_name, l.acquired_date, l.purchase_cost, l.freight_cost, l.labor_cost, l.other_cost, (+l.truck_cost || 0).toFixed(2), c.cost.toFixed(2), l.asking_price, l.status, l.customer_name, l.sold_date, l.status === 'sold' ? c.sale : '', c.profit !== null ? c.profit.toFixed(2) : '', c.received, c.balance.toFixed(2), l.location, l.notes]; }));
 }
 
 // ---------- sales ----------
@@ -349,7 +379,7 @@ function renderSales() {
   $('sale-tbody').innerHTML = rows.length ? rows.map(l => {
     const c = calc(l); tr += c.sale; tc += c.cost; trc += c.received; tq += +l.quantity || 0;
     return `<tr onclick="openLotModal(${l.id})"><td>${esc(l.sold_date || '')}</td><td class="tdn">${esc(l.lot_no)}</td><td>${esc(l.title || '')}</td>
-      <td class="tdn" style="font-weight:600">${esc(l.customer_name || '—')}</td><td>${esc(l.supplier_name || '—')}</td><td class="num">${esc(l.quantity)}</td>
+      <td><div class="tdn" style="font-weight:600">${esc(l.customer_name || '—')}</div>${l.fulfillment ? `<div class="tdct">${esc(t('dm_' + l.fulfillment))}${l.delivery_address ? ' · ' + esc(l.delivery_address) : ''}</div>` : ''}</td><td>${esc(l.supplier_name || '—')}</td><td class="num">${esc(l.quantity)}</td>
       <td class="num">${money(c.sale)}</td><td class="num">${money(c.cost)}</td><td class="num ${plCls(c.profit)}">${money(c.profit)}</td><td class="num">${pct(c.margin)}</td>
       <td class="num">${money(c.received)}</td><td>${payBadge(c.pay)}</td></tr>`;
   }).join('') : `<tr class="empty-row"><td colspan="12">${t('no_data')}</td></tr>`;
@@ -358,8 +388,8 @@ function renderSales() {
   $('sale-stats').innerHTML = chip(t('s_revenue'), money0(tr)) + chip(t('s_profit'), money0(tp)) + chip(t('s_margin'), tr ? pct(tp / tr) : '—');
 }
 function exportSales() {
-  csv('liquidation-sales', ['Sold Date', 'Lot #', 'Description', 'Customer', 'Supplier', 'Qty', 'Sale Price', 'Total Cost', 'Profit', 'Margin', 'Received', 'Balance', 'Payment Method'],
-    applySort('sales', salesRows(), GET).map(l => { const c = calc(l); return [l.sold_date, l.lot_no, l.title, l.customer_name, l.supplier_name, l.quantity, c.sale, c.cost.toFixed(2), c.profit.toFixed(2), isFinite(c.margin) ? (c.margin * 100).toFixed(1) + '%' : '', c.received, c.balance.toFixed(2), l.payment_method]; }));
+  csv('liquidation-sales', ['Sold Date', 'Lot #', 'Description', 'Customer', 'Supplier', 'Qty', 'Sale Price', 'Total Cost', 'Profit', 'Margin', 'Received', 'Balance', 'Payment Method', 'Delivery/Pickup', 'Delivery Address', 'Delivery Date'],
+    applySort('sales', salesRows(), GET).map(l => { const c = calc(l); return [l.sold_date, l.lot_no, l.title, l.customer_name, l.supplier_name, l.quantity, c.sale, c.cost.toFixed(2), c.profit.toFixed(2), isFinite(c.margin) ? (c.margin * 100).toFixed(1) + '%' : '', c.received, c.balance.toFixed(2), l.payment_method, l.fulfillment, l.delivery_address, l.delivery_date]; }));
 }
 
 // ---------- receivables ----------
@@ -428,10 +458,18 @@ async function openLotModal(id, sell) {
     <div class="modal-section">${t('sec_cost')}</div>
     <div class="modal-row">${field(t('f_supplier'), partySelect('f-supplier_id', SUPPLIERS, l.supplier_id, 'suppliers'))}${field(t('f_acq_date'), inp('f-acquired_date', l.acquired_date, 'date'))}</div>
     <div class="modal-row" style="grid-template-columns:repeat(4,1fr)">${field(t('f_purchase'), n('f-purchase_cost', l.purchase_cost))}${field(t('f_freight'), n('f-freight_cost', l.freight_cost))}${field(t('f_labor'), n('f-labor_cost', l.labor_cost))}${field(t('f_other'), n('f-other_cost', l.other_cost))}</div>
+    <input type="hidden" id="f-truck_cost" value="${+l.truck_cost || 0}"/>
+    ${(l.truck_bills || []).length ? `<div class="modal-row">${field(t('f_truck_cost'), `<div style="font-size:11px;color:var(--g700);display:flex;flex-direction:column;gap:3px">${l.truck_bills.map(b =>
+      `<div><b>${esc(b.bill_no)}</b> · ${esc(b.truck_company || '')} · ${money(b.amount)}${b.lot_count > 1 ? ` ÷ ${b.lot_count} = <b>${money(b.amount / b.lot_count)}</b>` : ''}</div>`).join('')}</div>`, true)}</div>` : ''}
 
     <div class="modal-section">${t('sec_sale')}</div>
     <div class="modal-row" style="grid-template-columns:1fr 1fr 1fr">${field(t('f_status'), sel('f-status', ['in_stock', 'listed', 'sold', 'cancelled'].map(k => [k, t('st_' + k)]), l.status))}${field(t('f_asking'), n('f-asking_price', l.asking_price))}${field(t('f_customer'), partySelect('f-customer_id', CUSTOMERS, l.customer_id, 'customers'))}</div>
     <div class="modal-row" style="grid-template-columns:repeat(4,1fr)" id="sale-fields">${field(t('f_sold_date'), inp('f-sold_date', l.sold_date, 'date'))}${field(t('f_sale_price'), n('f-sale_price', l.sale_price))}${field(t('f_received'), n('f-amount_received', l.amount_received))}${field(t('f_pay_method'), inp('f-payment_method', l.payment_method, 'text', 'list="pay-methods"'))}</div>
+    <div class="modal-row" style="grid-template-columns:1fr 1fr 2fr" id="ful-fields">
+      ${field(t('f_fulfillment'), `<select class="modal-input" id="f-fulfillment" onchange="lotFulfillmentUI()"><option value="">—</option><option value="delivery" ${l.fulfillment === 'delivery' ? 'selected' : ''}>${t('dm_delivery')}</option><option value="pickup" ${l.fulfillment === 'pickup' ? 'selected' : ''}>${t('dm_pickup')}</option></select>`)}
+      ${field(t('f_delivery_date'), inp('f-delivery_date', l.delivery_date, 'date'))}
+      ${field(t('f_delivery_addr'), `<div style="display:flex;gap:6px">${inp('f-delivery_address', l.delivery_address, 'text', `oninput="addrResetInline('f-delivery-addr-status')"`)}<button class="btn btn-grn btn-sm" type="button" onclick="addrVerifyInline('f-delivery_address','f-delivery-addr-status')">${t('verify')}</button></div><div id="f-delivery-addr-status" ${l.delivery_address ? 'data-verified="1"' : ''}></div>`)}
+    </div>
     ${payMethodsList()}
     <div class="profit-box" id="lot-preview"></div>
     <div class="modal-row">${field(t('notes'), `<textarea class="modal-input" id="f-notes">${esc(l.notes || '')}</textarea>`, true)}</div>
@@ -441,11 +479,31 @@ async function openLotModal(id, sell) {
       <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn-save" onclick="saveLot(${id || 'null'})">${t('save')}</button>
     </div>`);
-  lotPreview();
+  lotPreview(); lotFulfillmentUI();
+  $('f-customer_id').addEventListener('change', lotCustomerDefaults);
+  if (sell && l.customer_id && !l.fulfillment) lotCustomerDefaults();
+}
+// 选了买家 → 带出他的 送货/自提 和收货地址
+function lotCustomerDefaults() {
+  const c = CUSTOMERS.find(x => String(x.id) === $('f-customer_id').value);
+  if (!c) return;
+  if (c.delivery_method) $('f-fulfillment').value = c.delivery_method;
+  if (c.delivery_method === 'delivery' && !$('f-delivery_address').value) {
+    const a = fmtAddr(c);
+    if (a) { $('f-delivery_address').value = a; setAddrStatus('f-delivery-addr-status', !!c.addr_verified && c.addr_verified !== '0'); }
+  }
+  lotFulfillmentUI();
+}
+function lotFulfillmentUI() {
+  const d = $('f-fulfillment').value === 'delivery';
+  ['f-delivery_date', 'f-delivery_address'].forEach(id => { $(id).disabled = !d; });
+  $('f-delivery_address').parentNode.parentNode.style.opacity = d ? 1 : .45;
+  $('f-delivery_date').parentNode.style.opacity = d ? 1 : .45;
 }
 function lotForm() {
   const ids = ['lot_no', 'title', 'category', 'load_type', 'quantity', 'location', 'supplier_id', 'acquired_date', 'purchase_cost', 'freight_cost', 'labor_cost', 'other_cost',
-    'status', 'asking_price', 'customer_id', 'sold_date', 'sale_price', 'amount_received', 'payment_method', 'notes'];
+    'status', 'asking_price', 'customer_id', 'sold_date', 'sale_price', 'amount_received', 'payment_method', 'notes',
+    'truck_cost', 'fulfillment', 'delivery_date', 'delivery_address'];
   const o = {}; ids.forEach(k => { const el = $('f-' + k); o[k] = el ? el.value : null; });
   if (o.supplier_id === '__new') o.supplier_id = ''; if (o.customer_id === '__new') o.customer_id = '';
   return o;
@@ -464,6 +522,8 @@ function lotPreview() {
 }
 async function saveLot(id) {
   const body = lotForm();
+  if (body.fulfillment !== 'delivery') { body.delivery_address = ''; body.delivery_date = ''; }
+  else if (body.delivery_address && !$('f-delivery-addr-status').dataset.verified) return toast(t('need_verify'), 'error');
   if (body.status === 'sold' && !body.customer_id && !confirm(LANG === 'zh' ? '还没选买家，确定保存？' : 'No customer selected — save anyway?')) return;
   try {
     await api(id ? '/api/lots/' + id : '/api/lots', { method: id ? 'PUT' : 'POST', body });
@@ -486,6 +546,86 @@ async function quickAddParty(kind, selId) {
   } catch (e) { toast(e.message, 'error'); sel.value = ''; }
 }
 
+// ---------- address verification (Mapbox, 同 pallet) ----------
+function mbParse(f) {
+  const street = (f.address ? f.address + ' ' : '') + f.text;
+  let city = '', state = '', zip = '';
+  (f.context || []).forEach(c => {
+    if (c.id.indexOf('place') === 0) city = c.text;
+    else if (c.id.indexOf('locality') === 0 && !city) city = c.text;
+    else if (c.id.indexOf('region') === 0) state = c.short_code ? c.short_code.replace('US-', '') : c.text;
+    else if (c.id.indexOf('postcode') === 0) zip = c.text;
+  });
+  const full = street + (city ? ', ' + city : '') + (state ? ', ' + state : '') + (zip ? ' ' + zip : '');
+  return { street, city, state, zip, full: full || f.place_name, place_name: f.place_name };
+}
+async function mbSearch(q) {
+  const base = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q.trim()) + '.json?access_token=' + encodeURIComponent(CONFIG.mapbox_token || '') + '&country=us&limit=5&language=en';
+  let d = await (await fetch(base + '&types=address')).json();
+  if (!d.features || !d.features.length) d = await (await fetch(base)).json();
+  return (d.features || []).map(mbParse);
+}
+function setAddrStatus(statusId, ok, msg) {
+  const st = $(statusId); if (!st) return;
+  if (ok) { st.dataset.verified = '1'; st.innerHTML = `<span style="color:var(--grn);font-size:9px;font-weight:600">&#10003; ${t('verified')}</span>`; }
+  else { delete st.dataset.verified; st.innerHTML = msg || ''; }
+}
+function addrResetInline(statusId) { setAddrStatus(statusId, false); }
+function showMatches(statusId, results, onPick) {
+  const st = $(statusId);
+  if (!results.length) return setAddrStatus(statusId, false, `<span style="color:var(--red);font-size:9px">&#10007; ${t('addr_not_found')}</span>`);
+  st.innerHTML = `<span style="color:var(--grn);font-size:9px">&#10003; ${results.length} ${t('select_match')}</span>
+    <div style="border:1px solid var(--g200);border-radius:6px;background:#fff;margin-top:4px;max-height:160px;overflow-y:auto;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+    ${results.map((r, i) => `<div data-i="${i}" style="padding:6px 10px;font-size:10px;cursor:pointer;border-bottom:1px solid var(--g100);line-height:1.4" onmouseover="this.style.background='var(--pri-l)'" onmouseout="this.style.background='#fff'">
+      <div style="font-weight:600">${esc(r.full)}</div>${r.place_name !== r.full ? `<div style="font-size:8px;color:var(--g400)">${esc(r.place_name)}</div>` : ''}</div>`).join('')}</div>`;
+  st.querySelectorAll('div[data-i]').forEach(d => d.onclick = () => { onPick(results[+d.dataset.i]); setAddrStatus(statusId, true); });
+}
+async function runVerify(statusId, q, onPick) {
+  if (!CONFIG.mapbox_token) return setAddrStatus(statusId, false, `<span style="color:var(--amb);font-size:9px">&#9888; MAPBOX_TOKEN ${LANG === 'zh' ? '未设置 (请在 Railway 环境变量里添加)' : 'is not set (add it in Railway variables)'}</span>`);
+  if (!q.trim()) return setAddrStatus(statusId, false, `<span style="color:var(--red);font-size:9px">${t('addr_not_found')}</span>`);
+  setAddrStatus(statusId, false, `<span style="color:var(--g400);font-size:9px">${t('verifying')}</span>`);
+  try { showMatches(statusId, await mbSearch(q), onPick); }
+  catch (e) { setAddrStatus(statusId, false, `<span style="color:var(--amb);font-size:9px">&#9888; ${t('net_err')}</span>`); }
+}
+// 分栏地址 (addr1 / city / state / zip)
+function addrVerifyCard(prefix) {
+  const v = k => $(`${prefix}-${k}`).value;
+  runVerify(`${prefix}-status`, [v('addr1'), v('city'), v('state'), v('zip')].filter(Boolean).join(', '), r => {
+    $(`${prefix}-addr1`).value = r.street || ''; $(`${prefix}-city`).value = r.city || '';
+    $(`${prefix}-state`).value = r.state || ''; $(`${prefix}-zip`).value = r.zip || '';
+  });
+}
+// 单行地址
+function addrVerifyInline(inputId, statusId) { runVerify(statusId, $(inputId).value, r => { $(inputId).value = r.full; }); }
+
+function fmtAddr(p, bill) {
+  const k = x => p[(bill ? 'bill_' : '') + x];
+  if (!k('addr1')) return bill ? '' : (p.address || '');
+  return [k('addr1'), k('addr2'), k('city'), [k('state'), k('zip')].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+}
+function addrCard(prefix, title, p, bill) {
+  const k = x => p[(bill ? 'bill_' : '') + x] || '';
+  const ok = bill ? p.bill_verified : p.addr_verified;
+  const reset = `oninput="addrResetInline('${prefix}-status')"`;
+  return `<div class="addr-card" id="${prefix}">
+    <div class="addr-card-header"><span class="addr-card-title">${esc(title)}</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <input class="modal-input" id="${prefix}-addr1" placeholder="${t('addr1')}" value="${esc(k('addr1') || (!bill && !p.addr1 ? p.address || '' : ''))}" ${reset}/>
+      <input class="modal-input" id="${prefix}-addr2" placeholder="${t('addr2')}" value="${esc(k('addr2'))}"/>
+      <div style="display:flex;gap:6px;align-items:flex-end">
+        <input class="modal-input" id="${prefix}-city" placeholder="${t('city')}" style="flex:2" value="${esc(k('city'))}" ${reset}/>
+        <input class="modal-input" id="${prefix}-state" placeholder="${t('f_state')}" style="flex:1;text-transform:uppercase" maxlength="2" value="${esc(k('state'))}" ${reset}/>
+        <input class="modal-input" id="${prefix}-zip" placeholder="${t('zip')}" style="flex:1" value="${esc(k('zip'))}" ${reset}/>
+        <button class="btn btn-grn btn-sm" type="button" style="flex-shrink:0" onclick="addrVerifyCard('${prefix}')">${t('verify')}</button>
+      </div>
+      <div id="${prefix}-status" ${ok && ok !== '0' ? 'data-verified="1"' : ''}>${ok && ok !== '0' ? `<span style="color:var(--grn);font-size:9px;font-weight:600">&#10003; ${t('verified')}</span>` : ''}</div>
+    </div></div>`;
+}
+function readAddrCard(prefix) {
+  const v = k => $(`${prefix}-${k}`).value.trim();
+  return { addr1: v('addr1'), addr2: v('addr2'), city: v('city'), state: v('state').toUpperCase(), zip: v('zip'), verified: !!$(`${prefix}-status`).dataset.verified };
+}
+
 // ---------- suppliers / customers ----------
 function renderParties(kind) {
   const isSup = kind === 'suppliers';
@@ -499,41 +639,181 @@ function renderParties(kind) {
     const c = calc(l); s.n += +l.quantity || 0; s.spent += c.cost;
     if (l.status === 'sold') { s.sold += +l.quantity || 0; s.rev += c.sale; s.profit += c.profit; s.bal += Math.max(0, c.balance); }
   }
-  const rows = list.filter(p => !q || [p.name, p.contact, p.phone, p.email].some(v => (v || '').toLowerCase().includes(q)));
+  const rows = list.filter(p => !q || [p.name, p.contact, p.phone, p.email, p.city, p.state, fmtAddr(p)].some(v => (v || '').toLowerCase().includes(q)));
   const cols = isSup
-    ? [['name'], ['contact'], ['phone'], ['email'], ['loads_bought', 1], ['total_spent', 1], ['loads_sold', 1], ['s_profit', 1]]
-    : [['name'], ['contact'], ['phone'], ['email'], ['loads_sold', 1], ['total_revenue', 1], ['s_profit', 1], ['s_ar', 1]];
+    ? [['name'], ['contact'], ['phone'], ['th_location_city'], ['loads_bought', 1], ['total_spent', 1], ['loads_sold', 1], ['s_profit', 1]]
+    : [['name'], ['contact'], ['phone'], ['th_location_city'], ['delivery_method'], ['loads_sold', 1], ['total_revenue', 1], ['s_profit', 1], ['s_ar', 1]];
   $(kind + '-thead').innerHTML = '<tr>' + cols.map(([k, n]) => `<th class="${n ? 'num' : ''}">${t(k)}</th>`).join('') + '</tr>';
   $(kind + '-tbody').innerHTML = rows.length ? rows.map(p => {
     const s = stats[p.id] || { n: 0, sold: 0, spent: 0, rev: 0, profit: 0, bal: 0 };
     const nums = isSup ? [s.n, money(s.spent), s.sold, `<span class="${plCls(s.profit)}">${money(s.profit)}</span>`]
       : [s.sold, money(s.rev), `<span class="${plCls(s.profit)}">${money(s.profit)}</span>`, s.bal ? `<span class="neg">${money(s.bal)}</span>` : money(0)];
     const initials = esc((p.name || '?').trim().slice(0, 2).toUpperCase());
+    const loc = [p.city, p.state].filter(Boolean).join(', ');
+    const ver = p.addr1 ? (p.addr_verified && p.addr_verified !== '0' ? ' <span style="color:var(--grn)" title="Verified">&#10003;</span>' : ' <span style="color:var(--amb)" title="Unverified">&#9888;</span>') : '';
+    const dm = !isSup ? `<td>${p.delivery_method ? `<span class="badge ${p.delivery_method === 'delivery' ? 'ba' : 'bb'}">${esc(t('dm_' + p.delivery_method))}</span>` : ''}</td>` : '';
     return `<tr onclick="openPartyModal('${kind}',${p.id})"><td><div class="tdv"><div class="tda" style="background:${isSup ? '#8B6914' : '#0891b2'}">${initials}</div><div class="tdn">${esc(p.name)}</div></div></td>
-      <td>${esc(p.contact || '')}</td><td>${esc(p.phone || '')}</td><td>${esc(p.email || '')}</td>${nums.map(v => `<td class="num">${v}</td>`).join('')}</tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="8">${t('no_data')}</td></tr>`;
+      <td>${esc(p.contact || '')}</td><td>${esc(p.phone || '')}</td><td>${esc(loc)}${ver}</td>${dm}${nums.map(v => `<td class="num">${v}</td>`).join('')}</tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="${cols.length}">${t('no_data')}</td></tr>`;
 }
 function openPartyModal(kind, id) {
-  const p = id ? (kind === 'suppliers' ? SUPPLIERS : CUSTOMERS).find(x => x.id === id) : {};
-  const title = id ? `${t('edit')} — ${esc(p.name)}` : t(kind === 'suppliers' ? 'add_supplier' : 'add_customer').replace('+ ', '');
+  const isSup = kind === 'suppliers';
+  const p = id ? (isSup ? SUPPLIERS : CUSTOMERS).find(x => x.id === id) : { bill_same: '1', delivery_method: isSup ? '' : 'delivery' };
+  const title = id ? `${t('edit')} — ${esc(p.name)}` : t(isSup ? 'add_supplier' : 'add_customer').replace('+ ', '');
+  const same = p.bill_same === '1' || p.bill_same === 1;
+  const dm = v => `<label style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--g200);border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;flex:1">
+      <input type="radio" name="p-dm" value="${v}" ${p.delivery_method === v ? 'checked' : ''} style="accent-color:var(--pri)"/>${v === 'delivery' ? '&#128666; ' : '&#127970; '}${t('dm_' + v)}</label>`;
   openModal(title, `
     <div class="modal-row">${field(t('name') + ' *', inp('p-name', p.name), true)}</div>
     <div class="modal-row">${field(t('contact'), inp('p-contact', p.contact))}${field(t('phone'), inp('p-phone', p.phone))}</div>
-    <div class="modal-row">${field(t('email'), inp('p-email', p.email))}${field(t('address'), inp('p-address', p.address))}</div>
+    <div class="modal-row">${field(t('email'), inp('p-email', p.email), true)}</div>
+    ${!isSup ? `<div class="modal-section">${t('delivery_method')}</div><div style="display:flex;gap:8px;margin-bottom:6px">${dm('delivery')}${dm('pickup')}</div>` : ''}
+    <div class="modal-section">${t('sec_address')}</div>
+    ${addrCard('p-ship', isSup ? t('pickup_addr') : t('ship_addr'), p, false)}
+    <div style="display:flex;align-items:center;gap:6px;margin:2px 2px 8px">
+      <input type="checkbox" id="p-bill-same" ${same ? 'checked' : ''} onchange="$('p-bill').style.display=this.checked?'none':''" style="margin:0;cursor:pointer"/>
+      <label for="p-bill-same" style="font-size:11px;cursor:pointer;color:var(--g600);font-weight:600">${isSup ? t('bill_same_sup') : t('bill_same')}</label>
+    </div>
+    ${addrCard('p-bill', t('bill_addr'), p, true)}
     <div class="modal-row">${field(t('notes'), `<textarea class="modal-input" id="p-notes">${esc(p.notes || '')}</textarea>`, true)}</div>
     <div class="modal-actions">
       ${id && currentUser.role === 'admin' ? `<button class="btn-del" onclick="deleteParty('${kind}',${id})">${t('delete')}</button>` : ''}
       <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button><button class="btn-save" onclick="saveParty('${kind}',${id || 'null'})">${t('save')}</button>
-    </div>`, 560);
+    </div>`, 600);
+  if (same) $('p-bill').style.display = 'none';
 }
 async function saveParty(kind, id) {
-  const body = {}; ['name', 'contact', 'phone', 'email', 'address', 'notes'].forEach(k => body[k] = $('p-' + k).value);
+  const body = {}; ['name', 'contact', 'phone', 'email', 'notes'].forEach(k => body[k] = $('p-' + k).value);
+  const dmEl = document.querySelector('input[name="p-dm"]:checked');
+  body.delivery_method = dmEl ? dmEl.value : '';
+  const ship = readAddrCard('p-ship'), same = $('p-bill-same').checked;
+  const bill = same ? ship : readAddrCard('p-bill');
+  const filled = a => a.addr1 || a.city || a.zip;
+  if (body.delivery_method === 'delivery' && !filled(ship)) return toast(t('need_ship'), 'error');
+  if ((filled(ship) && !ship.verified) || (!same && filled(bill) && !bill.verified)) return toast(t('need_verify'), 'error');
+  Object.assign(body, { addr1: ship.addr1, addr2: ship.addr2, city: ship.city, state: ship.state, zip: ship.zip, addr_verified: ship.verified ? '1' : '0',
+    bill_same: same ? '1' : '0', bill_addr1: bill.addr1, bill_addr2: bill.addr2, bill_city: bill.city, bill_state: bill.state, bill_zip: bill.zip, bill_verified: bill.verified ? '1' : '0' });
   try { await api(`/api/${kind}` + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body }); closeModal(); toast(t('saved')); refreshAll(); }
   catch (e) { toast(e.message, 'error'); }
 }
 async function deleteParty(kind, id) {
   if (!confirm(t('confirm_delete'))) return;
   try { await api(`/api/${kind}/${id}`, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
+}
+
+// ---------- truck bills 卡车账单 ----------
+const truckCompanies = () => [...new Set(TRUCKS.map(b => b.truck_company).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+const tbBadge = s => `<span class="badge ${s === 'paid' ? 'badge-paid' : 'badge-unpaid'}">${esc(t('tb_' + s))}</span>`;
+function tbRows() {
+  const q = $('tb-search').value.trim().toLowerCase(), st = $('tb-status').value, co = $('tb-company').value, pu = $('tb-purpose').value;
+  const f = $('tb-from').value, to = $('tb-to').value;
+  return TRUCKS.filter(b => (!st || b.status === st) && (!co || b.truck_company === co) && (!pu || b.purpose === pu) &&
+    (!f || (b.date_start || '') >= f) && (!to || (b.date_start || '') <= to) &&
+    (!q || [b.bill_no, b.truck_company, b.state, b.invoice_no, b.paid_by, b.payment_method, b.notes, ...b.lots.map(l => l.lot_no + ' ' + (l.title || ''))].some(v => (v || '').toLowerCase().includes(q))));
+}
+function renderTruckBills() {
+  const unpaid = TRUCKS.filter(b => b.status !== 'paid');
+  const badge = $('tb-badge'); badge.textContent = unpaid.length; badge.style.display = unpaid.length ? '' : 'none';
+  thead('tb-thead', [
+    { t: 'th_bill', key: 'bill_no' }, { t: 'th_truck_co', key: 'truck_company' }, { t: 'th_dates', key: 'date_start' }, { t: 'th_purpose', key: 'purpose' },
+    { t: 'th_amount', key: 'amount', num: 1 }, { t: 'th_lots' }, { t: 'th_invoice' }, { t: 'f_tb_method' }, { t: 'th_paid_by' }, { t: 'th_receipt' }, { t: 'th_status', key: 'status' },
+  ], 'tb', 'renderTruckBills');
+  if (!sortState.tb) sortState.tb = { key: 'date_start', dir: -1 };
+  const rows = applySort('tb', tbRows(), { bill_no: b => b.bill_no || '', truck_company: b => (b.truck_company || '').toLowerCase(), date_start: b => b.date_start || '', purpose: b => b.purpose || '', amount: b => +b.amount || 0, status: b => b.status });
+  const total = rows.reduce((a, b) => a + (+b.amount || 0), 0), totUnpaid = rows.filter(b => b.status !== 'paid').reduce((a, b) => a + (+b.amount || 0), 0);
+  $('tb-stats').innerHTML = chip(t('th_amount'), money0(total)) + chip(t('tb_unpaid'), money0(totUnpaid)) + chip('#', rows.length);
+  $('tb-tbody').innerHTML = rows.length ? rows.map(b => {
+    const dates = esc(b.date_start || '') + (b.date_end && b.date_end !== b.date_start ? ' ~ ' + esc(b.date_end) : '');
+    const lots = b.lots.length ? b.lots.map(l => `<span class="chip" style="margin:1px">${esc(l.lot_no)}</span>`).join('') + (b.lots.length > 1 ? `<div class="tdct">${t('per_lot')} ${money(b.amount / b.lots.length)}</div>` : '')
+      : `<span style="color:var(--amb);font-size:10px">&#9888; ${t('unallocated')}</span>`;
+    const rc = b.receipts.length ? b.receipts.map((f, i) => `<a href="/api/files/${encodeURIComponent(f)}" target="_blank" onclick="event.stopPropagation()" class="chip">&#128206; ${i + 1}</a>`).join(' ') : '<span style="color:var(--g400)">—</span>';
+    return `<tr onclick="openTruckBillModal(${b.id})">
+      <td class="tdn">${esc(b.bill_no)}</td><td><div class="tdn" style="font-weight:600">${esc(b.truck_company || '')}</div>${b.state ? `<div class="tdct">${esc(b.state)}</div>` : ''}</td>
+      <td>${dates}</td><td>${esc(t('tp_' + b.purpose))}</td><td class="num" style="font-weight:700">${money(b.amount)}</td>
+      <td style="white-space:normal;max-width:260px">${lots}</td><td>${esc(b.invoice_no || '')}</td><td>${esc(b.payment_method || '')}</td><td>${esc(b.paid_by || '')}</td>
+      <td>${rc}</td><td>${tbBadge(b.status)}${b.paid_date ? `<div class="tdct">${esc(b.paid_date)}</div>` : ''}</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="11">${t('no_data')}</td></tr>`;
+  $('tb-tfoot').innerHTML = rows.length ? `<tr><td colspan="4">${rows.length}</td><td class="num">${money(total)}</td><td colspan="6"></td></tr>` : '';
+}
+function openTruckBillModal(id) {
+  const b = id ? TRUCKS.find(x => x.id === id) : { purpose: 'pickup', status: 'unpaid', date_start: today(), lots: [], receipts: [] };
+  const linked = new Set(b.lots.map(l => l.id));
+  const sel = (fid, opts, v, extra = '') => `<select class="modal-input" id="${fid}" ${extra}>${opts.map(([k, lab]) => `<option value="${k}" ${k === v ? 'selected' : ''}>${esc(lab)}</option>`).join('')}</select>`;
+  // 已关联的排前面, 其次未售/近期
+  const lotList = LOTS.filter(l => l.status !== 'cancelled' || linked.has(l.id))
+    .sort((x, y) => (linked.has(y.id) - linked.has(x.id)) || (y.id - x.id));
+  openModal(id ? `${t('edit_truck_bill')} — ${esc(b.bill_no)}` : t('new_truck_bill'), `
+    <datalist id="tb-co-list">${truckCompanies().map(c => `<option>${esc(c)}</option>`).join('')}</datalist>
+    <datalist id="tb-paidby-list">${[...new Set(TRUCKS.map(x => x.paid_by).filter(Boolean))].map(c => `<option>${esc(c)}</option>`).join('')}</datalist>
+    ${payMethodsList()}
+    <div class="modal-row" style="grid-template-columns:2fr 1fr 1fr">${field(t('f_truck_co') + ' *', inp('tb-f-truck_company', b.truck_company, 'text', 'list="tb-co-list"'))}${field(t('f_state'), inp('tb-f-state', b.state, 'text', 'maxlength="2" style="text-transform:uppercase"'))}
+      ${field(t('f_purpose'), sel('tb-f-purpose', ['pickup', 'delivery', 'other'].map(k => [k, t('tp_' + k)]), b.purpose))}</div>
+    <div class="modal-row" style="grid-template-columns:1fr 1fr 1fr">${field(t('f_date_start'), inp('tb-f-date_start', b.date_start, 'date'))}${field(t('f_date_end'), inp('tb-f-date_end', b.date_end, 'date'))}
+      ${field(t('f_amount') + ' *', inp('tb-f-amount', b.amount, 'number', 'oninput="tbPerLot()"'))}</div>
+    <div class="modal-section">${t('sec_pay')}</div>
+    <div class="modal-row" style="grid-template-columns:repeat(4,1fr)">
+      ${field(t('f_tb_status'), sel('tb-f-status', [['unpaid', t('tb_unpaid')], ['paid', t('tb_paid')]], b.status))}${field(t('f_paid_date'), inp('tb-f-paid_date', b.paid_date, 'date'))}
+      ${field(t('f_tb_method'), inp('tb-f-payment_method', b.payment_method, 'text', 'list="pay-methods"'))}${field(t('f_paid_by'), inp('tb-f-paid_by', b.paid_by, 'text', 'list="tb-paidby-list"'))}</div>
+    <div class="modal-row">${field(t('f_invoice'), inp('tb-f-invoice_no', b.invoice_no))}<div></div></div>
+    <div class="modal-section">${t('f_link_lots')} <span id="tb-perlot" style="float:right;color:var(--g600);font-weight:600"></span></div>
+    <input class="modal-input" placeholder="${t('search')}" oninput="tbFilterLots(this.value)" style="margin-bottom:6px"/>
+    <div id="tb-lot-list" style="max-height:200px;overflow:auto;border:1px solid var(--g200);border-radius:7px">
+      ${lotList.length ? lotList.map(l => `<label data-s="${esc((l.lot_no + ' ' + (l.title || '') + ' ' + (l.supplier_name || '') + ' ' + (l.customer_name || '')).toLowerCase())}" style="display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--g100);font-size:11px;cursor:pointer">
+        <input type="checkbox" class="tb-lot" value="${l.id}" ${linked.has(l.id) ? 'checked' : ''} onchange="tbPerLot()" style="accent-color:var(--pri)"/>
+        <b>${esc(l.lot_no)}</b><span style="flex:1;color:var(--g600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.title || '')}${l.supplier_name ? ' · ' + esc(l.supplier_name) : ''}${l.customer_name ? ' → ' + esc(l.customer_name) : ''}</span>${statusBadge(l.status)}</label>`).join('')
+        : `<div style="padding:12px;color:var(--g400);font-size:11px">${t('no_data')}</div>`}
+    </div>
+    <div class="modal-section">${t('receipts')}</div>
+    <div id="tb-receipts" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${tbReceiptChips(b)}</div>
+    <input type="file" id="tb-files" multiple accept="image/*,application/pdf" style="font-size:11px"/>
+    <div class="modal-row" style="margin-top:10px">${field(t('notes'), `<textarea class="modal-input" id="tb-f-notes">${esc(b.notes || '')}</textarea>`, true)}</div>
+    <div class="modal-actions">
+      ${id && currentUser.role === 'admin' ? `<button class="btn-del" onclick="deleteTruckBill(${id})">${t('delete')}</button>` : ''}
+      <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button><button class="btn-save" id="tb-save" onclick="saveTruckBill(${id || 'null'})">${t('save')}</button>
+    </div>`, 720);
+  tbPerLot();
+}
+const tbReceiptChips = b => (b.receipts || []).map((f, i) => `<span class="chip"><a href="/api/files/${encodeURIComponent(f)}" target="_blank">&#128206; ${t('th_receipt')} ${i + 1}</a>
+  <a href="#" onclick="event.preventDefault();delTruckReceipt(${b.id},'${esc(f)}')" style="color:var(--red);margin-left:4px">&times;</a></span>`).join('');
+function tbFilterLots(q) { q = q.toLowerCase(); document.querySelectorAll('#tb-lot-list label').forEach(l => { l.style.display = !q || l.dataset.s.includes(q) ? 'flex' : 'none'; }); }
+function tbPerLot() {
+  const n = document.querySelectorAll('.tb-lot:checked').length, amt = +$('tb-f-amount').value || 0;
+  $('tb-perlot').innerHTML = n ? `${n} × ${money(amt / n)}` : `<span style="color:var(--amb)">${t('unallocated')}</span>`;
+}
+async function saveTruckBill(id) {
+  const body = {};
+  ['truck_company', 'state', 'purpose', 'date_start', 'date_end', 'amount', 'status', 'paid_date', 'payment_method', 'paid_by', 'invoice_no', 'notes'].forEach(k => body[k] = $('tb-f-' + k).value);
+  body.lot_ids = [...document.querySelectorAll('.tb-lot:checked')].map(c => +c.value);
+  if (!body.truck_company.trim()) return toast(t('f_truck_co') + '?', 'error');
+  if (body.amount === '') return toast(t('f_amount') + '?', 'error');
+  const btn = $('tb-save'); btn.disabled = true;
+  try {
+    const saved = await api('/api/truck-bills' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body });
+    const files = $('tb-files').files;
+    if (files.length) {
+      const fd = new FormData(); [...files].forEach(f => fd.append('files', f));
+      const r = await fetch(`/api/truck-bills/${saved.id}/receipts`, { method: 'POST', body: fd });
+      if (!r.ok) toast((await r.json().catch(() => ({}))).error || 'Upload failed', 'error');
+    }
+    closeModal(); toast(t('saved')); refreshAll();
+  } catch (e) { toast(e.message, 'error'); }
+  btn.disabled = false;
+}
+async function delTruckReceipt(id, file) {
+  if (!confirm(t('confirm_delete'))) return;
+  try {
+    const b = await api(`/api/truck-bills/${id}/receipts/${encodeURIComponent(file)}`, { method: 'DELETE' });
+    const i = TRUCKS.findIndex(x => x.id === id); if (i >= 0) TRUCKS[i] = b;
+    $('tb-receipts').innerHTML = tbReceiptChips(b); renderTruckBills();
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function deleteTruckBill(id) {
+  if (!confirm(t('confirm_delete'))) return;
+  try { await api('/api/truck-bills/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
+}
+function exportTruckBills() {
+  csv('truck-bills', ['Bill #', 'Truck Company', 'State', 'Purpose', 'Start', 'End', 'Amount', 'Linked Loads', 'Per Load', 'Their Invoice', 'Payment Method', 'Paid By', 'Status', 'Paid Date', 'Notes'],
+    applySort('tb', tbRows(), {}).map(b => [b.bill_no, b.truck_company, b.state, b.purpose, b.date_start, b.date_end, b.amount, b.lots.map(l => l.lot_no).join(' '), b.lots.length ? (b.amount / b.lots.length).toFixed(2) : '', b.invoice_no, b.payment_method, b.paid_by, b.status, b.paid_date, b.notes]));
 }
 
 // ---------- users ----------

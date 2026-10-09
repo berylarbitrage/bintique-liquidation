@@ -76,6 +76,47 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 `);
 
+// ---------- migrations ----------
+// 地址 (照 pallet: 地址卡 + Mapbox 验证) / 送货·自提
+const ADDR_COLS = ['addr1', 'addr2', 'city', 'state', 'zip', 'addr_verified',
+  'bill_same', 'bill_addr1', 'bill_addr2', 'bill_city', 'bill_state', 'bill_zip', 'bill_verified', 'delivery_method'];
+for (const t of ['suppliers', 'customers']) {
+  for (const c of ADDR_COLS) { try { db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} TEXT`); } catch (e) {} }
+}
+for (const c of ['fulfillment TEXT', 'delivery_date TEXT', 'delivery_address TEXT']) {
+  try { db.exec(`ALTER TABLE lots ADD COLUMN ${c}`); } catch (e) {}
+}
+// 卡车账单: 一张账单可以关联多拖货, 金额平摊进每拖的成本
+db.exec(`
+CREATE TABLE IF NOT EXISTS truck_bills (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  bill_no TEXT UNIQUE,
+  truck_company TEXT,
+  state TEXT,
+  purpose TEXT DEFAULT 'pickup',               -- pickup 进货提货 / delivery 送货 / other
+  date_start TEXT,
+  date_end TEXT,
+  amount REAL DEFAULT 0,
+  invoice_no TEXT,                             -- 对方 Invoice #
+  payment_method TEXT,
+  paid_by TEXT,
+  status TEXT DEFAULT 'unpaid',                -- unpaid / paid
+  paid_date TEXT,
+  receipts TEXT DEFAULT '[]',                  -- JSON 文件名数组
+  notes TEXT,
+  created_by TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS truck_bill_lots (
+  bill_id INTEGER NOT NULL REFERENCES truck_bills(id) ON DELETE CASCADE,
+  lot_id INTEGER NOT NULL REFERENCES lots(id) ON DELETE CASCADE,
+  PRIMARY KEY (bill_id, lot_id)
+);
+`);
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
 // ---------- auth ----------
 function hashPass(pw, salt = crypto.randomBytes(16).toString('hex')) {
   return salt + ':' + crypto.scryptSync(String(pw), salt, 64).toString('hex');
@@ -170,14 +211,19 @@ function crud(table, fields) {
     res.json({ ok: true });
   });
 }
-const partyFields = ['name', 'contact', 'phone', 'email', 'address', 'notes'];
+const partyFields = ['name', 'contact', 'phone', 'email', 'notes', ...ADDR_COLS];
 crud('suppliers', partyFields);
 crud('customers', partyFields);
 
 // ---------- lots ----------
+// 卡车费分摊: 每张账单金额 ÷ 关联的拖数
+const TRUCK_ALLOC = `(SELECT COALESCE(SUM(b.amount * 1.0 / (SELECT COUNT(*) FROM truck_bill_lots x WHERE x.bill_id = b.id)), 0)
+    FROM truck_bill_lots bl JOIN truck_bills b ON b.id = bl.bill_id WHERE bl.lot_id = l.id)`;
 const LOT_SELECT = `
   SELECT l.*, s.name AS supplier_name, c.name AS customer_name,
-    (l.purchase_cost + l.freight_cost + l.labor_cost + l.other_cost) AS total_cost
+    ${TRUCK_ALLOC} AS truck_cost,
+    (l.purchase_cost + l.freight_cost + l.labor_cost + l.other_cost + ${TRUCK_ALLOC}) AS total_cost,
+    (SELECT GROUP_CONCAT(b.bill_no, ', ') FROM truck_bill_lots bl JOIN truck_bills b ON b.id = bl.bill_id WHERE bl.lot_id = l.id) AS truck_bill_nos
   FROM lots l
   LEFT JOIN suppliers s ON s.id = l.supplier_id
   LEFT JOIN customers c ON c.id = l.customer_id`;
@@ -206,6 +252,8 @@ function lotValues(b) {
     sold_date: str(b.sold_date) || (status === 'sold' ? new Date().toISOString().slice(0, 10) : null),
     sale_price: num(b.sale_price), amount_received: num(b.amount_received),
     payment_method: str(b.payment_method), location: str(b.location), notes: str(b.notes),
+    fulfillment: ['pickup', 'delivery'].includes(b.fulfillment) ? b.fulfillment : null,
+    delivery_date: str(b.delivery_date), delivery_address: str(b.delivery_address),
   };
 }
 
@@ -214,6 +262,9 @@ app.get('/api/lots/:id', auth, (req, res) => {
   const l = db.prepare(LOT_SELECT + ' WHERE l.id = ?').get(req.params.id);
   if (!l) return res.status(404).json({ error: 'Not found' });
   l.history = db.prepare("SELECT * FROM audit_log WHERE entity = 'lots' AND entity_id = ? ORDER BY id DESC").all(l.id);
+  l.truck_bills = db.prepare(`SELECT b.id, b.bill_no, b.truck_company, b.amount, b.purpose,
+      (SELECT COUNT(*) FROM truck_bill_lots x WHERE x.bill_id = b.id) AS lot_count
+    FROM truck_bill_lots bl JOIN truck_bills b ON b.id = bl.bill_id WHERE bl.lot_id = ? ORDER BY b.id`).all(l.id);
   res.json(l);
 });
 app.post('/api/lots', auth, (req, res) => {
@@ -262,6 +313,105 @@ app.delete('/api/lots/:id', auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- truck bills 卡车账单 ----------
+const multer = require('multer');
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: UPLOAD_DIR,
+    filename: (req, f, cb) => cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + (path.extname(f.originalname).toLowerCase().replace(/[^.a-z0-9]/g, '') || '')),
+  }),
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (req, f, cb) => cb(null, /^(image\/|application\/pdf$)/.test(f.mimetype)),
+});
+function nextBillNo() {
+  const ym = new Date().toISOString().slice(2, 7).replace('-', '');
+  const prefix = `TR-${ym}-`;
+  const last = db.prepare('SELECT bill_no FROM truck_bills WHERE bill_no LIKE ? ORDER BY bill_no DESC LIMIT 1').get(prefix + '%');
+  return prefix + String(last ? parseInt(last.bill_no.slice(prefix.length), 10) + 1 : 1).padStart(3, '0');
+}
+const BILL_SELECT = `SELECT b.*,
+  (SELECT json_group_array(json_object('id', l.id, 'lot_no', l.lot_no, 'title', l.title))
+     FROM truck_bill_lots bl JOIN lots l ON l.id = bl.lot_id WHERE bl.bill_id = b.id) AS lots_json
+  FROM truck_bills b`;
+const billOut = b => b && ({ ...b, lots: JSON.parse(b.lots_json || '[]'), receipts: JSON.parse(b.receipts || '[]'), lots_json: undefined });
+function billValues(b) {
+  const status = b.status === 'paid' ? 'paid' : 'unpaid';
+  return {
+    truck_company: str(b.truck_company), state: str(b.state) && str(b.state).toUpperCase(),
+    purpose: ['pickup', 'delivery', 'other'].includes(b.purpose) ? b.purpose : 'pickup',
+    date_start: str(b.date_start), date_end: str(b.date_end), amount: num(b.amount),
+    invoice_no: str(b.invoice_no), payment_method: str(b.payment_method), paid_by: str(b.paid_by),
+    status, paid_date: status === 'paid' ? (str(b.paid_date) || new Date().toISOString().slice(0, 10)) : null,
+    notes: str(b.notes),
+  };
+}
+const setBillLots = db.transaction((billId, lotIds) => {
+  db.prepare('DELETE FROM truck_bill_lots WHERE bill_id = ?').run(billId);
+  const ins = db.prepare('INSERT OR IGNORE INTO truck_bill_lots (bill_id, lot_id) VALUES (?, ?)');
+  for (const id of [...new Set((lotIds || []).map(Number).filter(Boolean))]) ins.run(billId, id);
+});
+
+app.get('/api/truck-bills', auth, (req, res) => res.json(db.prepare(BILL_SELECT + ' ORDER BY b.id DESC').all().map(billOut)));
+app.post('/api/truck-bills', auth, (req, res) => {
+  const b = req.body || {};
+  const v = billValues(b);
+  if (!v.truck_company) return res.status(400).json({ error: 'Truck company is required' });
+  if (v.date_start && v.date_end && v.date_end < v.date_start) return res.status(400).json({ error: 'End date is before start date' });
+  v.bill_no = nextBillNo(); v.created_by = req.user.username;
+  const keys = Object.keys(v);
+  const r = db.prepare(`INSERT INTO truck_bills (${keys.join(',')}) VALUES (${keys.map(k => '@' + k).join(',')})`).run(v);
+  setBillLots(r.lastInsertRowid, b.lot_ids);
+  audit(req, 'truck_bills', r.lastInsertRowid, 'create', { ...v, lot_ids: b.lot_ids });
+  res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(r.lastInsertRowid)));
+});
+app.put('/api/truck-bills/:id', auth, (req, res) => {
+  const old = db.prepare('SELECT * FROM truck_bills WHERE id = ?').get(req.params.id);
+  if (!old) return res.status(404).json({ error: 'Not found' });
+  const b = req.body || {};
+  const v = billValues(b);
+  if (!v.truck_company) return res.status(400).json({ error: 'Truck company is required' });
+  if (v.date_start && v.date_end && v.date_end < v.date_start) return res.status(400).json({ error: 'End date is before start date' });
+  const keys = Object.keys(v);
+  db.prepare(`UPDATE truck_bills SET ${keys.map(k => k + ' = @' + k).join(',')}, updated_at = datetime('now') WHERE id = @id`).run({ ...v, id: old.id });
+  if (Array.isArray(b.lot_ids)) setBillLots(old.id, b.lot_ids);
+  const changes = {};
+  for (const k of keys) if (String(old[k] ?? '') !== String(v[k] ?? '')) changes[k] = [old[k], v[k]];
+  if (Array.isArray(b.lot_ids)) changes.lot_ids = b.lot_ids;
+  audit(req, 'truck_bills', old.id, 'update', changes);
+  res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(old.id)));
+});
+app.post('/api/truck-bills/:id/receipts', auth, upload.array('files', 10), (req, res) => {
+  const b = db.prepare('SELECT * FROM truck_bills WHERE id = ?').get(req.params.id);
+  if (!b) return res.status(404).json({ error: 'Not found' });
+  if (!req.files || !req.files.length) return res.status(400).json({ error: 'Only images or PDF files (max 15MB)' });
+  const list = JSON.parse(b.receipts || '[]').concat(req.files.map(f => f.filename));
+  db.prepare('UPDATE truck_bills SET receipts = ? WHERE id = ?').run(JSON.stringify(list), b.id);
+  audit(req, 'truck_bills', b.id, 'receipt', { files: req.files.map(f => f.originalname) });
+  res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(b.id)));
+});
+app.delete('/api/truck-bills/:id/receipts/:file', auth, (req, res) => {
+  const b = db.prepare('SELECT * FROM truck_bills WHERE id = ?').get(req.params.id);
+  if (!b) return res.status(404).json({ error: 'Not found' });
+  const list = JSON.parse(b.receipts || '[]').filter(f => f !== req.params.file);
+  db.prepare('UPDATE truck_bills SET receipts = ? WHERE id = ?').run(JSON.stringify(list), b.id);
+  audit(req, 'truck_bills', b.id, 'receipt_delete', { file: req.params.file });
+  res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(b.id)));
+});
+app.delete('/api/truck-bills/:id', auth, adminOnly, (req, res) => {
+  db.prepare('DELETE FROM truck_bills WHERE id = ?').run(req.params.id);
+  audit(req, 'truck_bills', +req.params.id, 'delete');
+  res.json({ ok: true });
+});
+app.get('/api/files/:name', auth, (req, res) => {
+  const name = path.basename(req.params.name);
+  const p = path.join(UPLOAD_DIR, name);
+  if (!fs.existsSync(p)) return res.status(404).send('Not found');
+  res.sendFile(p);
+});
+
+// 地址验证用的 Mapbox token (在 Railway 设环境变量 MAPBOX_TOKEN, 用 pallet 同一个 pk.* token 即可)
+app.get('/api/config', auth, (req, res) => res.json({ mapbox_token: process.env.MAPBOX_TOKEN || '' }));
+
 // ---------- users (admin) ----------
 app.get('/api/users', auth, adminOnly, (req, res) => res.json(db.prepare('SELECT id, username, display_name, role, created_at FROM users ORDER BY id').all()));
 app.post('/api/users', auth, adminOnly, (req, res) => {
@@ -300,6 +450,8 @@ app.get('/api/backup', auth, adminOnly, (req, res) => {
     suppliers: db.prepare('SELECT * FROM suppliers').all(),
     customers: db.prepare('SELECT * FROM customers').all(),
     lots: db.prepare('SELECT * FROM lots').all(),
+    truck_bills: db.prepare('SELECT * FROM truck_bills').all(),
+    truck_bill_lots: db.prepare('SELECT * FROM truck_bill_lots').all(),
   };
   res.setHeader('Content-Disposition', `attachment; filename="liquidation-backup-${dump.exported_at.slice(0, 10)}.json"`);
   res.json(dump);

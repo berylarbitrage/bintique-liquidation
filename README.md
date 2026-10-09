@@ -16,8 +16,9 @@
 | 弃货库存 Inventory | 所有批次，按状态 (在库/已挂售/已售/作废)、货源筛选；库龄；一键「卖出」；导出 CSV |
 | 销售记录 Sales | 已售批次：卖给谁、成交价、成本、毛利、毛利率、收款状态；按买家/日期筛选；合计行；导出 CSV |
 | 待收款 Receivables | 还没收齐钱的单子，账龄，一键收款 |
-| 货源 Suppliers | 货从哪来；每个货源的进货拖数、花费、带来的毛利 |
-| 买家 Customers | 卖给谁；每个买家的购买拖数、销售额、毛利、欠款 |
+| 卡车账单 Truck Bills | 卡车公司、用车日期、金额、付款状态/方式/付款人、对方 Invoice、收据上传；关联到哪几拖货，金额平摊进那几拖的成本 |
+| 货源 Suppliers | 货从哪来；提货地址 (Mapbox 验证)；每个货源的进货拖数、花费、带来的毛利 |
+| 买家 Customers | 卖给谁；送货/自提；收货地址 + 账单地址 (Mapbox 验证，和 pallet 一样，未验证不能保存)；每个买家的购买拖数、销售额、毛利、欠款 |
 | 用户 / Backup | 管理员：账号管理、JSON 备份下载 |
 
 中文 / English 切换。每条记录都有修改记录（谁、什么时候、改了什么）。
@@ -32,7 +33,8 @@ npm start
 ## 部署到 Railway
 1. 在 Railway 新建项目 → 连接本仓库
 2. 添加 Volume，挂载路径 `/data`（SQLite 数据库存在这里）
-3. 环境变量：`ADMIN_USER=admin`、`ADMIN_PASS=<强密码>`
+3. 环境变量：`ADMIN_USER=admin`、`ADMIN_PASS=<强密码>`；`MAPBOX_TOKEN=<和 pallet 用的同一个 pk. 开头的 token>`（地址验证要用，没设的话「验证」按钮会提示）
+   卡车收据文件存在 `/data/uploads`
 4. Deploy
 
 ## 绑定域名 liquidation.bintique.com
