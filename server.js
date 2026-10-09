@@ -694,6 +694,8 @@ app.get('/api/files/:name', auth, (req, res) => {
 app.get('/api/config', auth, (req, res) => res.json({
   geocoder: process.env.GOOGLE_MAPS_API_KEY ? 'google' : (process.env.MAPBOX_TOKEN ? 'mapbox' : ''),
   mapbox_token: process.env.GOOGLE_MAPS_API_KEY ? '' : (process.env.MAPBOX_TOKEN || ''),
+  // 打印 PO / SO / 发票 抬头上的公司信息
+  company: { name: process.env.COMPANY_NAME || 'Bintique', address: process.env.COMPANY_ADDRESS || '', phone: process.env.COMPANY_PHONE || '', email: process.env.COMPANY_EMAIL || '' },
 }));
 
 // Google Geocoding 走后端代理, key 不暴露给浏览器

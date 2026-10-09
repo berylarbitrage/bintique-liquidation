@@ -147,6 +147,7 @@
         <div id="po-stats" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
         <div style="flex:1"></div>
         <button class="btn btn-export btn-sm" onclick="exportOrders('purchase')" data-t="export_csv"></button>
+        <button class="btn btn-out btn-sm" onclick="printSelected('purchase')" data-t="print_sel"></button>
         <button class="btn btn-sm" onclick="invoiceSelected('purchase')" style="background:#fffbeb;border:1px solid #fbbf24;color:#92400e;font-weight:600" data-t="make_invoice"></button>
         <button class="btn btn-sm" onclick="moveToCheckout('purchase')" style="background:#2563eb;color:#fff;font-weight:600" data-t="move_checkout"></button>
         <button class="btn btn-pri" onclick="openOrderModal(null,'purchase')" data-t="new_order"></button>
@@ -167,6 +168,7 @@
         <div id="so-stats" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
         <div style="flex:1"></div>
         <button class="btn btn-export btn-sm" onclick="exportOrders('sales')" data-t="export_csv"></button>
+        <button class="btn btn-out btn-sm" onclick="printSelected('sales')" data-t="print_sel"></button>
         <button class="btn btn-sm" onclick="invoiceSelected('sales')" style="background:#fffbeb;border:1px solid #fbbf24;color:#92400e;font-weight:600" data-t="make_invoice"></button>
         <button class="btn btn-sm" onclick="moveToCheckout('sales')" style="background:#2563eb;color:#fff;font-weight:600" data-t="move_checkout"></button>
         <button class="btn btn-pri" onclick="openOrderModal(null,'sales')" data-t="new_order"></button>
