@@ -339,3 +339,10 @@ th.sortable{cursor:pointer}th.sortable:hover{color:var(--g800)}
 tfoot td{font-weight:700;background:var(--g50);position:sticky;bottom:0;border-top:1px solid var(--g200)}
 @media(max-width:768px){.profit-box{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){.sidebar{left:-110vw}.sidebar.open{left:0}}
+.badge-picked_up{background:#d1fae5;color:#065f46}
+.badge-pending{background:#FFFAEB;color:#B54708}
+.badge-checkout{background:#dbeafe;color:#1d4ed8}
+.badge-pay-paid{background:#ECFDF3;color:#027A48}
+.badge-pay-partial{background:#FFFAEB;color:#B54708}
+.badge-pay-unpaid{background:#FEF3F2;color:#B42318}
+.badge-pay-uninvoiced{background:var(--g100);color:var(--g500)}

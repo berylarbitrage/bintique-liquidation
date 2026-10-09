@@ -1,5 +1,6 @@
-// Bintique Liquidation — 弃货 (liquidation load) sales tracker
-// 思路: 每一拖弃货 = 一条 lot。记录 从谁那买的 / 成本多少 / 卖给了谁 / 卖了多少钱 / 收款情况。
+// Bintique Liquidation — 弃货 (liquidation load) sales tracker, 布局照 pallet.bintique.com
+// PO = 从货源买进一拖 (成本), SO = 卖给买家 (卖多少钱), SO 关联 PO 算毛利;
+// 卡车订单关联 PO/SO, 金额平摊进成本。
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -215,105 +216,6 @@ const partyFields = ['name', 'contact', 'phone', 'email', 'notes', ...ADDR_COLS]
 crud('suppliers', partyFields);
 crud('customers', partyFields);
 
-// ---------- lots ----------
-// 卡车费分摊: 每张账单金额 ÷ 关联的拖数
-const TRUCK_ALLOC = `(SELECT COALESCE(SUM(b.amount * 1.0 / (SELECT COUNT(*) FROM truck_bill_lots x WHERE x.bill_id = b.id)), 0)
-    FROM truck_bill_lots bl JOIN truck_bills b ON b.id = bl.bill_id WHERE bl.lot_id = l.id)`;
-const LOT_SELECT = `
-  SELECT l.*, s.name AS supplier_name, c.name AS customer_name,
-    ${TRUCK_ALLOC} AS truck_cost,
-    (l.purchase_cost + l.freight_cost + l.labor_cost + l.other_cost + ${TRUCK_ALLOC}) AS total_cost,
-    (SELECT GROUP_CONCAT(b.bill_no, ', ') FROM truck_bill_lots bl JOIN truck_bills b ON b.id = bl.bill_id WHERE bl.lot_id = l.id) AS truck_bill_nos
-  FROM lots l
-  LEFT JOIN suppliers s ON s.id = l.supplier_id
-  LEFT JOIN customers c ON c.id = l.customer_id`;
-const LOT_STATUSES = ['in_stock', 'listed', 'sold', 'cancelled'];
-
-function nextLotNo() {
-  const ym = new Date().toISOString().slice(2, 7).replace('-', '');
-  const prefix = `LQ-${ym}-`;
-  const last = db.prepare('SELECT lot_no FROM lots WHERE lot_no LIKE ? ORDER BY lot_no DESC LIMIT 1').get(prefix + '%');
-  const n = last ? parseInt(last.lot_no.slice(prefix.length), 10) + 1 : 1;
-  return prefix + String(n).padStart(3, '0');
-}
-function lotValues(b) {
-  const status = LOT_STATUSES.includes(b.status) ? b.status : 'in_stock';
-  return {
-    title: str(b.title), category: str(b.category),
-    load_type: ['pallet', 'truckload', 'box', 'gaylord'].includes(b.load_type) ? b.load_type : 'pallet',
-    quantity: num(b.quantity) || 1,
-    supplier_id: b.supplier_id ? +b.supplier_id : null,
-    acquired_date: str(b.acquired_date),
-    purchase_cost: num(b.purchase_cost), freight_cost: num(b.freight_cost),
-    labor_cost: num(b.labor_cost), other_cost: num(b.other_cost),
-    asking_price: num(b.asking_price),
-    status,
-    customer_id: b.customer_id ? +b.customer_id : null,
-    sold_date: str(b.sold_date) || (status === 'sold' ? new Date().toISOString().slice(0, 10) : null),
-    sale_price: num(b.sale_price), amount_received: num(b.amount_received),
-    payment_method: str(b.payment_method), location: str(b.location), notes: str(b.notes),
-    fulfillment: ['pickup', 'delivery'].includes(b.fulfillment) ? b.fulfillment : null,
-    delivery_date: str(b.delivery_date), delivery_address: str(b.delivery_address),
-  };
-}
-
-app.get('/api/lots', auth, (req, res) => res.json(db.prepare(LOT_SELECT + ' ORDER BY l.id DESC').all()));
-app.get('/api/lots/:id', auth, (req, res) => {
-  const l = db.prepare(LOT_SELECT + ' WHERE l.id = ?').get(req.params.id);
-  if (!l) return res.status(404).json({ error: 'Not found' });
-  l.history = db.prepare("SELECT * FROM audit_log WHERE entity = 'lots' AND entity_id = ? ORDER BY id DESC").all(l.id);
-  l.truck_bills = db.prepare(`SELECT b.id, b.bill_no, b.truck_company, b.amount, b.purpose,
-      (SELECT COUNT(*) FROM truck_bill_lots x WHERE x.bill_id = b.id) AS lot_count
-    FROM truck_bill_lots bl JOIN truck_bills b ON b.id = bl.bill_id WHERE bl.lot_id = ? ORDER BY b.id`).all(l.id);
-  res.json(l);
-});
-app.post('/api/lots', auth, (req, res) => {
-  const v = lotValues(req.body || {});
-  v.lot_no = str(req.body.lot_no) || nextLotNo();
-  v.created_by = req.user.username;
-  const keys = Object.keys(v);
-  try {
-    const r = db.prepare(`INSERT INTO lots (${keys.join(',')}) VALUES (${keys.map(k => '@' + k).join(',')})`).run(v);
-    audit(req, 'lots', r.lastInsertRowid, 'create', v);
-    res.json(db.prepare(LOT_SELECT + ' WHERE l.id = ?').get(r.lastInsertRowid));
-  } catch (e) {
-    res.status(400).json({ error: /UNIQUE/.test(e.message) ? 'Lot # already exists' : e.message });
-  }
-});
-app.put('/api/lots/:id', auth, (req, res) => {
-  const old = db.prepare('SELECT * FROM lots WHERE id = ?').get(req.params.id);
-  if (!old) return res.status(404).json({ error: 'Not found' });
-  const v = lotValues(req.body || {});
-  if (str(req.body.lot_no)) v.lot_no = str(req.body.lot_no);
-  const keys = Object.keys(v);
-  try {
-    db.prepare(`UPDATE lots SET ${keys.map(k => k + ' = @' + k).join(',')}, updated_at = datetime('now') WHERE id = @id`).run({ ...v, id: old.id });
-  } catch (e) {
-    return res.status(400).json({ error: /UNIQUE/.test(e.message) ? 'Lot # already exists' : e.message });
-  }
-  const changes = {};
-  for (const k of keys) if (String(old[k] ?? '') !== String(v[k] ?? '')) changes[k] = [old[k], v[k]];
-  if (Object.keys(changes).length) audit(req, 'lots', old.id, 'update', changes);
-  res.json(db.prepare(LOT_SELECT + ' WHERE l.id = ?').get(old.id));
-});
-// 快速收款
-app.post('/api/lots/:id/payment', auth, (req, res) => {
-  const l = db.prepare('SELECT * FROM lots WHERE id = ?').get(req.params.id);
-  if (!l) return res.status(404).json({ error: 'Not found' });
-  const amt = num(req.body.amount);
-  if (!amt) return res.status(400).json({ error: 'Amount required' });
-  db.prepare("UPDATE lots SET amount_received = amount_received + ?, payment_method = COALESCE(?, payment_method), updated_at = datetime('now') WHERE id = ?")
-    .run(amt, str(req.body.method), l.id);
-  audit(req, 'lots', l.id, 'payment', { amount: amt, method: str(req.body.method) });
-  res.json(db.prepare(LOT_SELECT + ' WHERE l.id = ?').get(l.id));
-});
-app.delete('/api/lots/:id', auth, adminOnly, (req, res) => {
-  db.prepare('DELETE FROM lots WHERE id = ?').run(req.params.id);
-  audit(req, 'lots', +req.params.id, 'delete');
-  res.json({ ok: true });
-});
-
-// ---------- truck bills 卡车账单 ----------
 const multer = require('multer');
 const upload = multer({
   storage: multer.diskStorage({
@@ -323,77 +225,428 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (req, f, cb) => cb(null, /^(image\/|application\/pdf$)/.test(f.mimetype)),
 });
-function nextBillNo() {
+
+// ---------- schema: orders / invoices / checkout / trucks ----------
+db.exec(`
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_no TEXT UNIQUE,
+  order_type TEXT NOT NULL,                     -- purchase (PO) / sales (SO)
+  supplier_id INTEGER REFERENCES suppliers(id) ON DELETE SET NULL,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+  po_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,   -- SO 卖的是哪一张 PO 的货
+  order_date TEXT,
+  title TEXT, category TEXT,
+  load_type TEXT DEFAULT 'pallet',              -- pallet / truckload / box / gaylord
+  quantity REAL DEFAULT 1,
+  unit_price REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  total REAL DEFAULT 0,                         -- quantity × unit_price − discount
+  extra_expense REAL DEFAULT 0,                 -- 额外支出 (人工/装卸/其他, 算我们的成本)
+  extra_expense_notes TEXT,
+  fulfillment TEXT,                             -- delivery 送货 / pickup 自提
+  sched_date TEXT,                              -- PO 提货日期 / SO 送货日期
+  address TEXT, address_verified TEXT,          -- PO 提货地址 / SO 送货地址
+  status TEXT DEFAULT 'confirmed',
+  invoice_id INTEGER,
+  checkout_group_id INTEGER,
+  notes TEXT,
+  legacy_lot_id INTEGER,
+  created_by TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS invoices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_no TEXT UNIQUE,
+  invoice_type TEXT NOT NULL,                   -- sales 销售发票 / purchase 采购发票
+  party_id INTEGER,                             -- customer_id / supplier_id
+  invoice_date TEXT, due_date TEXT,
+  total REAL DEFAULT 0,
+  paid_amount REAL DEFAULT 0,
+  paid_date TEXT, payment_method TEXT, bank TEXT,
+  their_invoice_no TEXT,
+  receipts TEXT DEFAULT '[]',
+  notes TEXT,
+  created_by TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS checkout_groups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  group_code TEXT UNIQUE,
+  group_type TEXT, party_id INTEGER,
+  status TEXT DEFAULT 'pending',                -- pending / invoiced
+  invoice_id INTEGER,
+  notes TEXT, created_by TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS truck_quotes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quote_no TEXT UNIQUE,
+  company_name TEXT NOT NULL, state TEXT, size TEXT,
+  price REAL DEFAULT 0, price_unit TEXT DEFAULT 'day',     -- day / trip / hour
+  quote_date TEXT, notes TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS truck_bill_orders (
+  bill_id INTEGER NOT NULL REFERENCES truck_bills(id) ON DELETE CASCADE,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  PRIMARY KEY (bill_id, order_id)
+);
+`);
+try { db.exec('ALTER TABLE truck_bills ADD COLUMN truck_quote_id INTEGER'); } catch (e) {}
+try { db.exec('ALTER TABLE truck_bills ADD COLUMN size TEXT'); } catch (e) {}
+
+const today = () => new Date().toISOString().slice(0, 10);
+const round2 = n => Math.round(n * 100) / 100;
+function nextNo(table, col, prefix) {
   const ym = new Date().toISOString().slice(2, 7).replace('-', '');
-  const prefix = `TR-${ym}-`;
-  const last = db.prepare('SELECT bill_no FROM truck_bills WHERE bill_no LIKE ? ORDER BY bill_no DESC LIMIT 1').get(prefix + '%');
-  return prefix + String(last ? parseInt(last.bill_no.slice(prefix.length), 10) + 1 : 1).padStart(3, '0');
+  const p = `${prefix}-${ym}-`;
+  const last = db.prepare(`SELECT ${col} AS v FROM ${table} WHERE ${col} LIKE ? ORDER BY ${col} DESC LIMIT 1`).get(p + '%');
+  return p + String(last ? parseInt(last.v.slice(p.length), 10) + 1 : 1).padStart(3, '0');
 }
-const BILL_SELECT = `SELECT b.*,
-  (SELECT json_group_array(json_object('id', l.id, 'lot_no', l.lot_no, 'title', l.title))
-     FROM truck_bill_lots bl JOIN lots l ON l.id = bl.lot_id WHERE bl.bill_id = b.id) AS lots_json
-  FROM truck_bills b`;
-const billOut = b => b && ({ ...b, lots: JSON.parse(b.lots_json || '[]'), receipts: JSON.parse(b.receipts || '[]'), lots_json: undefined });
+
+// ---------- 旧版 (弃货库存 lots) → PO / SO 一次性迁移 ----------
+(function migrateLots() {
+  const hasLots = db.prepare("SELECT COUNT(*) c FROM sqlite_master WHERE type='table' AND name='lots'").get().c;
+  if (!hasLots) return;
+  if (db.prepare('SELECT COUNT(*) c FROM orders').get().c) return;
+  const lots = db.prepare('SELECT * FROM lots ORDER BY id').all();
+  if (!lots.length) return;
+  const insOrder = db.prepare(`INSERT INTO orders (order_no, order_type, supplier_id, customer_id, po_id, order_date, title, category, load_type, quantity,
+    unit_price, total, extra_expense, extra_expense_notes, fulfillment, sched_date, address, address_verified, status, invoice_id, notes, legacy_lot_id, created_by, created_at)
+    VALUES (@order_no, @order_type, @supplier_id, @customer_id, @po_id, @order_date, @title, @category, @load_type, @quantity,
+    @unit_price, @total, @extra_expense, @extra_expense_notes, @fulfillment, @sched_date, @address, @address_verified, @status, @invoice_id, @notes, @legacy_lot_id, @created_by, @created_at)`);
+  const insInv = db.prepare(`INSERT INTO invoices (invoice_no, invoice_type, party_id, invoice_date, total, paid_amount, paid_date, payment_method, created_by)
+    VALUES (?, 'sales', ?, ?, ?, ?, ?, ?, 'migration')`);
+  const seq = { PO: 0, SO: 0, INV: 0 };
+  const no = (p, d) => `${p}-${(d || today()).slice(2, 7).replace('-', '')}-${String(++seq[p]).padStart(3, '0')}`;
+  const poByLot = {};
+  db.transaction(() => {
+    for (const l of lots) {
+      const qty = l.quantity || 1;
+      const extra = (l.freight_cost || 0) + (l.labor_cost || 0) + (l.other_cost || 0);
+      const notes = [l.notes, l.asking_price ? `标价 asking $${l.asking_price}` : null, l.location ? `仓位 ${l.location}` : null].filter(Boolean).join('\n') || null;
+      const po = insOrder.run({
+        order_no: no('PO', l.acquired_date), order_type: 'purchase', supplier_id: l.supplier_id, customer_id: null, po_id: null,
+        order_date: l.acquired_date, title: l.title, category: l.category, load_type: l.load_type, quantity: qty,
+        unit_price: round2((l.purchase_cost || 0) / qty), total: l.purchase_cost || 0, extra_expense: extra,
+        extra_expense_notes: extra ? `运费 ${l.freight_cost || 0} / 人工 ${l.labor_cost || 0} / 其他 ${l.other_cost || 0}` : null,
+        fulfillment: null, sched_date: l.acquired_date, address: null, address_verified: null,
+        status: l.status === 'cancelled' ? 'cancelled' : l.status === 'sold' ? 'completed' : 'confirmed',
+        invoice_id: null, notes, legacy_lot_id: l.id, created_by: l.created_by, created_at: l.created_at,
+      });
+      poByLot[l.id] = po.lastInsertRowid;
+      if (l.status === 'sold') {
+        let invId = null;
+        if (l.amount_received > 0) {
+          invId = insInv.run(no('INV', l.sold_date), l.customer_id, l.sold_date, l.sale_price || 0, l.amount_received,
+            l.amount_received >= (l.sale_price || 0) ? l.sold_date : null, l.payment_method).lastInsertRowid;
+        }
+        insOrder.run({
+          order_no: no('SO', l.sold_date), order_type: 'sales', supplier_id: null, customer_id: l.customer_id, po_id: po.lastInsertRowid,
+          order_date: l.sold_date, title: l.title, category: l.category, load_type: l.load_type, quantity: qty,
+          unit_price: round2((l.sale_price || 0) / qty), total: l.sale_price || 0, extra_expense: 0, extra_expense_notes: null,
+          fulfillment: l.fulfillment, sched_date: l.delivery_date, address: l.delivery_address, address_verified: l.delivery_address ? '1' : null,
+          status: 'completed', invoice_id: invId, notes: null, legacy_lot_id: l.id, created_by: l.created_by, created_at: l.created_at,
+        });
+      }
+    }
+    for (const r of db.prepare('SELECT * FROM truck_bill_lots').all()) {
+      if (poByLot[r.lot_id]) db.prepare('INSERT OR IGNORE INTO truck_bill_orders (bill_id, order_id) VALUES (?, ?)').run(r.bill_id, poByLot[r.lot_id]);
+    }
+  })();
+  console.log(`Migrated ${lots.length} lots → PO/SO orders`);
+})();
+
+// ---------- orders 计算 (成本 / 毛利 / 付款状态) ----------
+const ORDER_STATUSES = ['draft', 'confirmed', 'in_transit', 'picked_up', 'delivered', 'completed', 'cancelled'];
+function loadOrders(where = '', params = []) {
+  const rows = db.prepare(`SELECT o.*, s.name AS supplier_name, c.name AS customer_name,
+      i.invoice_no, i.total AS invoice_total, i.paid_amount AS invoice_paid, g.group_code AS checkout_code,
+      (SELECT COALESCE(SUM(b.amount * 1.0 / (SELECT COUNT(*) FROM truck_bill_orders x WHERE x.bill_id = b.id)), 0)
+         FROM truck_bill_orders bo JOIN truck_bills b ON b.id = bo.bill_id WHERE bo.order_id = o.id) AS truck_cost,
+      (SELECT GROUP_CONCAT(b.bill_no, ', ') FROM truck_bill_orders bo JOIN truck_bills b ON b.id = bo.bill_id WHERE bo.order_id = o.id) AS truck_bill_nos
+    FROM orders o
+    LEFT JOIN suppliers s ON s.id = o.supplier_id
+    LEFT JOIN customers c ON c.id = o.customer_id
+    LEFT JOIN invoices i ON i.id = o.invoice_id
+    LEFT JOIN checkout_groups g ON g.id = o.checkout_group_id ${where} ORDER BY o.id DESC`).all(...params);
+  // 关联关系需要全量 PO/SO 才能算
+  const all = where ? db.prepare(`SELECT o.id, o.order_type, o.po_id, o.quantity, o.total, o.extra_expense, o.status, o.order_no,
+      (SELECT COALESCE(SUM(b.amount * 1.0 / (SELECT COUNT(*) FROM truck_bill_orders x WHERE x.bill_id = b.id)), 0)
+         FROM truck_bill_orders bo JOIN truck_bills b ON b.id = bo.bill_id WHERE bo.order_id = o.id) AS truck_cost FROM orders o`).all() : rows;
+  const byId = Object.fromEntries(all.map(o => [o.id, o]));
+  const sosByPo = {};
+  for (const o of all) if (o.order_type === 'sales' && o.po_id && o.status !== 'cancelled') (sosByPo[o.po_id] = sosByPo[o.po_id] || []).push(o);
+  const poCost = po => (po.total || 0) + (po.extra_expense || 0) + (po.truck_cost || 0);
+  for (const o of rows) {
+    o.our_cost_direct = round2((o.extra_expense || 0) + (o.truck_cost || 0) + (o.order_type === 'purchase' ? (o.total || 0) : 0));
+    if (o.order_type === 'purchase') {
+      const sos = sosByPo[o.id] || [];
+      o.so_list = sos.map(s => s.order_no);
+      o.sold_qty = sos.reduce((a, s) => a + (s.quantity || 0), 0);
+      o.revenue = round2(sos.reduce((a, s) => a + (s.total || 0), 0));
+      o.total_cost = round2(poCost(o) + sos.reduce((a, s) => a + (s.extra_expense || 0) + (s.truck_cost || 0), 0));
+      o.profit = sos.length ? round2(o.revenue - o.total_cost) : null;
+    } else {
+      const po = o.po_id ? byId[o.po_id] : null;
+      o.po_no = po ? po.order_no : null;
+      // PO 成本按数量分摊到这张 SO
+      const share = po ? ((po.quantity || 0) > 0 ? Math.min(1, (o.quantity || 0) / po.quantity) : 1) : 0;
+      o.po_cost_share = po ? round2(poCost(po) * share) : null;
+      o.total_cost = round2((o.po_cost_share || 0) + (o.extra_expense || 0) + (o.truck_cost || 0));
+      o.profit = po ? round2((o.total || 0) - o.total_cost) : null;
+    }
+    o.pay_status = !o.invoice_id ? 'uninvoiced' : (o.invoice_paid || 0) >= (o.invoice_total || 0) - 0.005 ? 'paid' : (o.invoice_paid || 0) > 0 ? 'partial' : 'unpaid';
+  }
+  return rows;
+}
+function orderValues(b, type) {
+  const qty = num(b.quantity) || 1, unit = num(b.unit_price), discount = num(b.discount);
+  return {
+    supplier_id: type === 'purchase' && b.supplier_id ? +b.supplier_id : null,
+    customer_id: type === 'sales' && b.customer_id ? +b.customer_id : null,
+    po_id: type === 'sales' && b.po_id ? +b.po_id : null,
+    order_date: str(b.order_date) || today(), title: str(b.title), category: str(b.category),
+    load_type: ['pallet', 'truckload', 'box', 'gaylord'].includes(b.load_type) ? b.load_type : 'pallet',
+    quantity: qty, unit_price: unit, discount, total: round2(qty * unit - discount),
+    extra_expense: num(b.extra_expense), extra_expense_notes: str(b.extra_expense_notes),
+    fulfillment: ['pickup', 'delivery'].includes(b.fulfillment) ? b.fulfillment : null,
+    sched_date: str(b.sched_date), address: str(b.address), address_verified: str(b.address) ? (b.address_verified ? '1' : '0') : null,
+    status: ORDER_STATUSES.includes(b.status) ? b.status : 'confirmed', notes: str(b.notes),
+  };
+}
+
+app.get('/api/orders', auth, (req, res) => res.json(loadOrders()));
+app.get('/api/orders/:id', auth, (req, res) => {
+  const o = loadOrders('WHERE o.id = ?', [req.params.id])[0];
+  if (!o) return res.status(404).json({ error: 'Not found' });
+  o.history = db.prepare("SELECT * FROM audit_log WHERE entity = 'orders' AND entity_id = ? ORDER BY id DESC").all(o.id);
+  o.truck_bills = db.prepare(`SELECT b.id, b.bill_no, b.truck_company, b.amount,
+      (SELECT COUNT(*) FROM truck_bill_orders x WHERE x.bill_id = b.id) AS order_count
+    FROM truck_bill_orders bo JOIN truck_bills b ON b.id = bo.bill_id WHERE bo.order_id = ? ORDER BY b.id`).all(o.id);
+  res.json(o);
+});
+app.post('/api/orders', auth, (req, res) => {
+  const b = req.body || {};
+  const type = b.order_type === 'sales' ? 'sales' : 'purchase';
+  const v = orderValues(b, type);
+  if (type === 'purchase' && !v.supplier_id) return res.status(400).json({ error: 'Supplier is required' });
+  if (type === 'sales' && !v.customer_id) return res.status(400).json({ error: 'Customer is required' });
+  Object.assign(v, { order_type: type, order_no: nextNo('orders', 'order_no', type === 'sales' ? 'SO' : 'PO'), created_by: req.user.username });
+  const keys = Object.keys(v);
+  const r = db.prepare(`INSERT INTO orders (${keys.join(',')}) VALUES (${keys.map(k => '@' + k).join(',')})`).run(v);
+  audit(req, 'orders', r.lastInsertRowid, 'create', v);
+  res.json(loadOrders('WHERE o.id = ?', [r.lastInsertRowid])[0]);
+});
+app.put('/api/orders/:id', auth, (req, res) => {
+  const old = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+  if (!old) return res.status(404).json({ error: 'Not found' });
+  const v = orderValues(req.body || {}, old.order_type);
+  if (old.order_type === 'purchase' && !v.supplier_id) return res.status(400).json({ error: 'Supplier is required' });
+  if (old.order_type === 'sales' && !v.customer_id) return res.status(400).json({ error: 'Customer is required' });
+  if (v.po_id === old.id) v.po_id = null;
+  // 已开发票的订单不能改金额/对象, 先删发票
+  if (old.invoice_id && (v.total !== old.total || v.supplier_id !== old.supplier_id || v.customer_id !== old.customer_id))
+    return res.status(400).json({ error: 'Order is on an invoice — delete the invoice first to change amount or party / 已开发票, 改金额或对象要先删发票' });
+  const keys = Object.keys(v);
+  db.prepare(`UPDATE orders SET ${keys.map(k => k + ' = @' + k).join(',')}, updated_at = datetime('now') WHERE id = @id`).run({ ...v, id: old.id });
+  const changes = {};
+  for (const k of keys) if (String(old[k] ?? '') !== String(v[k] ?? '')) changes[k] = [old[k], v[k]];
+  if (Object.keys(changes).length) audit(req, 'orders', old.id, 'update', changes);
+  res.json(loadOrders('WHERE o.id = ?', [old.id])[0]);
+});
+app.delete('/api/orders/:id', auth, adminOnly, (req, res) => {
+  const o = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+  if (!o) return res.status(404).json({ error: 'Not found' });
+  if (o.invoice_id) return res.status(400).json({ error: 'Delete its invoice first / 先删除发票' });
+  db.prepare('DELETE FROM orders WHERE id = ?').run(o.id);
+  audit(req, 'orders', o.id, 'delete', { order_no: o.order_no });
+  res.json({ ok: true });
+});
+
+// ---------- invoices 销售发票 / 采购发票 ----------
+function loadInvoices(where = '', params = []) {
+  return db.prepare(`SELECT i.*,
+      CASE i.invoice_type WHEN 'sales' THEN (SELECT name FROM customers WHERE id = i.party_id) ELSE (SELECT name FROM suppliers WHERE id = i.party_id) END AS party_name,
+      (SELECT json_group_array(json_object('id', o.id, 'order_no', o.order_no, 'title', o.title, 'quantity', o.quantity, 'load_type', o.load_type,
+          'unit_price', o.unit_price, 'discount', o.discount, 'total', o.total, 'order_date', o.order_date, 'sched_date', o.sched_date))
+         FROM orders o WHERE o.invoice_id = i.id) AS orders_json
+    FROM invoices i ${where} ORDER BY i.id DESC`).all(...params).map(i => ({
+    ...i, orders: JSON.parse(i.orders_json || '[]'), receipts: JSON.parse(i.receipts || '[]'), orders_json: undefined,
+    status: i.paid_amount >= i.total - 0.005 && i.total > 0 ? 'paid' : i.paid_amount > 0 ? 'partial' : 'unpaid',
+  }));
+}
+function createInvoice(req, orderIds, extra = {}) {
+  const ids = [...new Set((orderIds || []).map(Number).filter(Boolean))];
+  if (!ids.length) throw new Error('No orders selected / 请先选择订单');
+  const orders = db.prepare(`SELECT * FROM orders WHERE id IN (${ids.map(() => '?').join(',')})`).all(...ids);
+  if (orders.length !== ids.length) throw new Error('Order not found');
+  const type = orders[0].order_type;
+  const party = type === 'sales' ? orders[0].customer_id : orders[0].supplier_id;
+  for (const o of orders) {
+    if (o.order_type !== type) throw new Error('PO and SO cannot be on one invoice / PO 和 SO 不能开在同一张发票');
+    if ((type === 'sales' ? o.customer_id : o.supplier_id) !== party) throw new Error('All orders must be for the same customer/supplier / 必须是同一个客户或货源');
+    if (o.invoice_id) throw new Error(`${o.order_no} already has an invoice / 已开过发票`);
+    if (o.status === 'cancelled') throw new Error(`${o.order_no} is cancelled`);
+  }
+  const total = round2(orders.reduce((a, o) => a + (o.total || 0), 0));
+  const r = db.prepare(`INSERT INTO invoices (invoice_no, invoice_type, party_id, invoice_date, due_date, total, their_invoice_no, notes, created_by)
+    VALUES (?,?,?,?,?,?,?,?,?)`).run(nextNo('invoices', 'invoice_no', type === 'sales' ? 'INV' : 'BILL'), type, party,
+    str(extra.invoice_date) || today(), str(extra.due_date), total, str(extra.their_invoice_no), str(extra.notes), req.user.username);
+  db.prepare(`UPDATE orders SET invoice_id = ? WHERE id IN (${ids.map(() => '?').join(',')})`).run(r.lastInsertRowid, ...ids);
+  audit(req, 'invoices', r.lastInsertRowid, 'create', { order_ids: ids, total });
+  return r.lastInsertRowid;
+}
+app.get('/api/invoices', auth, (req, res) => res.json(loadInvoices()));
+app.post('/api/invoices', auth, (req, res) => {
+  try {
+    const id = db.transaction(() => createInvoice(req, req.body.order_ids, req.body))();
+    res.json(loadInvoices('WHERE i.id = ?', [id])[0]);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.put('/api/invoices/:id', auth, (req, res) => {
+  const i = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id);
+  if (!i) return res.status(404).json({ error: 'Not found' });
+  const b = req.body || {};
+  const v = { invoice_date: str(b.invoice_date), due_date: str(b.due_date), paid_amount: num(b.paid_amount), paid_date: str(b.paid_date),
+    payment_method: str(b.payment_method), bank: str(b.bank), their_invoice_no: str(b.their_invoice_no), notes: str(b.notes) };
+  db.prepare(`UPDATE invoices SET ${Object.keys(v).map(k => k + ' = @' + k).join(',')} WHERE id = @id`).run({ ...v, id: i.id });
+  // 付清 → 订单自动变已完成
+  if (v.paid_amount >= i.total - 0.005 && i.total > 0)
+    db.prepare("UPDATE orders SET status = 'completed', updated_at = datetime('now') WHERE invoice_id = ? AND status NOT IN ('cancelled','completed')").run(i.id);
+  audit(req, 'invoices', i.id, 'update', v);
+  res.json(loadInvoices('WHERE i.id = ?', [i.id])[0]);
+});
+app.post('/api/invoices/:id/receipts', auth, upload.array('files', 10), (req, res) => {
+  const i = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id);
+  if (!i) return res.status(404).json({ error: 'Not found' });
+  if (!req.files || !req.files.length) return res.status(400).json({ error: 'Only images or PDF files (max 15MB)' });
+  db.prepare('UPDATE invoices SET receipts = ? WHERE id = ?').run(JSON.stringify(JSON.parse(i.receipts || '[]').concat(req.files.map(f => f.filename))), i.id);
+  audit(req, 'invoices', i.id, 'receipt', { files: req.files.map(f => f.originalname) });
+  res.json(loadInvoices('WHERE i.id = ?', [i.id])[0]);
+});
+app.delete('/api/invoices/:id', auth, adminOnly, (req, res) => {
+  const i = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id);
+  if (!i) return res.status(404).json({ error: 'Not found' });
+  db.transaction(() => {
+    db.prepare('UPDATE orders SET invoice_id = NULL WHERE invoice_id = ?').run(i.id);
+    db.prepare("UPDATE checkout_groups SET status = 'pending', invoice_id = NULL WHERE invoice_id = ?").run(i.id);
+    db.prepare('DELETE FROM invoices WHERE id = ?').run(i.id);
+  })();
+  audit(req, 'invoices', i.id, 'delete', { invoice_no: i.invoice_no });
+  res.json({ ok: true });
+});
+
+// ---------- 待结账 checkout groups ----------
+app.get('/api/checkout-groups', auth, (req, res) => res.json(db.prepare(`SELECT g.*,
+    CASE g.group_type WHEN 'sales' THEN (SELECT name FROM customers WHERE id = g.party_id) ELSE (SELECT name FROM suppliers WHERE id = g.party_id) END AS party_name
+  FROM checkout_groups g ORDER BY g.id DESC`).all()));
+app.post('/api/checkout-groups', auth, (req, res) => {
+  const ids = [...new Set((req.body.order_ids || []).map(Number).filter(Boolean))];
+  if (!ids.length) return res.status(400).json({ error: 'No orders selected / 请先选择订单' });
+  const orders = db.prepare(`SELECT * FROM orders WHERE id IN (${ids.map(() => '?').join(',')})`).all(...ids);
+  const type = orders[0].order_type, party = type === 'sales' ? orders[0].customer_id : orders[0].supplier_id;
+  for (const o of orders) {
+    if (o.order_type !== type || (type === 'sales' ? o.customer_id : o.supplier_id) !== party)
+      return res.status(400).json({ error: 'Select orders of the same customer/supplier / 请选同一个客户或货源的订单' });
+    if (o.invoice_id) return res.status(400).json({ error: `${o.order_no} already invoiced / 已开发票` });
+    if (o.checkout_group_id) return res.status(400).json({ error: `${o.order_no} is already in checkout / 已在待结账` });
+  }
+  const r = db.prepare('INSERT INTO checkout_groups (group_code, group_type, party_id, created_by) VALUES (?,?,?,?)')
+    .run(nextNo('checkout_groups', 'group_code', 'CK'), type, party, req.user.username);
+  db.prepare(`UPDATE orders SET checkout_group_id = ? WHERE id IN (${ids.map(() => '?').join(',')})`).run(r.lastInsertRowid, ...ids);
+  audit(req, 'checkout_groups', r.lastInsertRowid, 'create', { order_ids: ids });
+  res.json(db.prepare('SELECT * FROM checkout_groups WHERE id = ?').get(r.lastInsertRowid));
+});
+app.post('/api/checkout-groups/:id/invoice', auth, (req, res) => {
+  const g = db.prepare('SELECT * FROM checkout_groups WHERE id = ?').get(req.params.id);
+  if (!g) return res.status(404).json({ error: 'Not found' });
+  if (g.status !== 'pending') return res.status(400).json({ error: 'Already invoiced / 已开发票' });
+  try {
+    const id = db.transaction(() => {
+      const ids = db.prepare('SELECT id FROM orders WHERE checkout_group_id = ?').all(g.id).map(r => r.id);
+      const invId = createInvoice(req, ids, req.body || {});
+      db.prepare("UPDATE checkout_groups SET status = 'invoiced', invoice_id = ? WHERE id = ?").run(invId, g.id);
+      return invId;
+    })();
+    res.json(loadInvoices('WHERE i.id = ?', [id])[0]);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.delete('/api/checkout-groups/:id', auth, (req, res) => {
+  db.transaction(() => {
+    db.prepare('UPDATE orders SET checkout_group_id = NULL WHERE checkout_group_id = ? AND invoice_id IS NULL').run(req.params.id);
+    db.prepare("DELETE FROM checkout_groups WHERE id = ? AND status = 'pending'").run(req.params.id);
+  })();
+  audit(req, 'checkout_groups', +req.params.id, 'delete');
+  res.json({ ok: true });
+});
+app.delete('/api/checkout-groups/:id/orders/:orderId', auth, (req, res) => {
+  db.prepare('UPDATE orders SET checkout_group_id = NULL WHERE id = ? AND checkout_group_id = ? AND invoice_id IS NULL').run(req.params.orderId, req.params.id);
+  if (!db.prepare('SELECT COUNT(*) c FROM orders WHERE checkout_group_id = ?').get(req.params.id).c)
+    db.prepare("DELETE FROM checkout_groups WHERE id = ? AND status = 'pending'").run(req.params.id);
+  res.json({ ok: true });
+});
+
+// ---------- 卡车订单 truck orders (表名沿用 truck_bills) ----------
 function billValues(b) {
   const status = b.status === 'paid' ? 'paid' : 'unpaid';
   return {
-    truck_company: str(b.truck_company), state: str(b.state) && str(b.state).toUpperCase(),
+    truck_company: str(b.truck_company), state: str(b.state) && str(b.state).toUpperCase(), size: str(b.size),
     purpose: ['pickup', 'delivery', 'other'].includes(b.purpose) ? b.purpose : 'pickup',
     date_start: str(b.date_start), date_end: str(b.date_end), amount: num(b.amount),
     invoice_no: str(b.invoice_no), payment_method: str(b.payment_method), paid_by: str(b.paid_by),
-    status, paid_date: status === 'paid' ? (str(b.paid_date) || new Date().toISOString().slice(0, 10)) : null,
-    notes: str(b.notes),
+    status, paid_date: status === 'paid' ? (str(b.paid_date) || today()) : null,
+    truck_quote_id: b.truck_quote_id ? +b.truck_quote_id : null, notes: str(b.notes),
   };
 }
-const setBillLots = db.transaction((billId, lotIds) => {
-  db.prepare('DELETE FROM truck_bill_lots WHERE bill_id = ?').run(billId);
-  const ins = db.prepare('INSERT OR IGNORE INTO truck_bill_lots (bill_id, lot_id) VALUES (?, ?)');
-  for (const id of [...new Set((lotIds || []).map(Number).filter(Boolean))]) ins.run(billId, id);
+const BILL_SELECT = `SELECT b.*, q.quote_no,
+  (SELECT json_group_array(json_object('id', o.id, 'order_no', o.order_no, 'order_type', o.order_type, 'title', o.title))
+     FROM truck_bill_orders bo JOIN orders o ON o.id = bo.order_id WHERE bo.bill_id = b.id) AS orders_json
+  FROM truck_bills b LEFT JOIN truck_quotes q ON q.id = b.truck_quote_id`;
+const billOut = b => b && ({ ...b, orders: JSON.parse(b.orders_json || '[]'), receipts: JSON.parse(b.receipts || '[]'), orders_json: undefined });
+const setBillOrders = db.transaction((billId, ids) => {
+  db.prepare('DELETE FROM truck_bill_orders WHERE bill_id = ?').run(billId);
+  const ins = db.prepare('INSERT OR IGNORE INTO truck_bill_orders (bill_id, order_id) VALUES (?, ?)');
+  for (const id of [...new Set((ids || []).map(Number).filter(Boolean))]) ins.run(billId, id);
 });
-
 app.get('/api/truck-bills', auth, (req, res) => res.json(db.prepare(BILL_SELECT + ' ORDER BY b.id DESC').all().map(billOut)));
-app.post('/api/truck-bills', auth, (req, res) => {
+function saveBill(req, res, old) {
   const b = req.body || {};
   const v = billValues(b);
   if (!v.truck_company) return res.status(400).json({ error: 'Truck company is required' });
-  if (v.date_start && v.date_end && v.date_end < v.date_start) return res.status(400).json({ error: 'End date is before start date' });
-  v.bill_no = nextBillNo(); v.created_by = req.user.username;
-  const keys = Object.keys(v);
-  const r = db.prepare(`INSERT INTO truck_bills (${keys.join(',')}) VALUES (${keys.map(k => '@' + k).join(',')})`).run(v);
-  setBillLots(r.lastInsertRowid, b.lot_ids);
-  audit(req, 'truck_bills', r.lastInsertRowid, 'create', { ...v, lot_ids: b.lot_ids });
-  res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(r.lastInsertRowid)));
-});
+  if (v.date_start && v.date_end && v.date_end < v.date_start) return res.status(400).json({ error: 'End date is before start date / 结束日期不能早于开始日期' });
+  let id;
+  if (old) {
+    db.prepare(`UPDATE truck_bills SET ${Object.keys(v).map(k => k + ' = @' + k).join(',')}, updated_at = datetime('now') WHERE id = @id`).run({ ...v, id: old.id });
+    id = old.id;
+  } else {
+    Object.assign(v, { bill_no: nextNo('truck_bills', 'bill_no', 'TR'), created_by: req.user.username });
+    id = db.prepare(`INSERT INTO truck_bills (${Object.keys(v).join(',')}) VALUES (${Object.keys(v).map(k => '@' + k).join(',')})`).run(v).lastInsertRowid;
+  }
+  if (Array.isArray(b.order_ids)) setBillOrders(id, b.order_ids);
+  audit(req, 'truck_bills', id, old ? 'update' : 'create', { ...v, order_ids: b.order_ids });
+  res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(id)));
+}
+app.post('/api/truck-bills', auth, (req, res) => saveBill(req, res, null));
 app.put('/api/truck-bills/:id', auth, (req, res) => {
   const old = db.prepare('SELECT * FROM truck_bills WHERE id = ?').get(req.params.id);
   if (!old) return res.status(404).json({ error: 'Not found' });
-  const b = req.body || {};
-  const v = billValues(b);
-  if (!v.truck_company) return res.status(400).json({ error: 'Truck company is required' });
-  if (v.date_start && v.date_end && v.date_end < v.date_start) return res.status(400).json({ error: 'End date is before start date' });
-  const keys = Object.keys(v);
-  db.prepare(`UPDATE truck_bills SET ${keys.map(k => k + ' = @' + k).join(',')}, updated_at = datetime('now') WHERE id = @id`).run({ ...v, id: old.id });
-  if (Array.isArray(b.lot_ids)) setBillLots(old.id, b.lot_ids);
-  const changes = {};
-  for (const k of keys) if (String(old[k] ?? '') !== String(v[k] ?? '')) changes[k] = [old[k], v[k]];
-  if (Array.isArray(b.lot_ids)) changes.lot_ids = b.lot_ids;
-  audit(req, 'truck_bills', old.id, 'update', changes);
-  res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(old.id)));
+  saveBill(req, res, old);
 });
 app.post('/api/truck-bills/:id/receipts', auth, upload.array('files', 10), (req, res) => {
   const b = db.prepare('SELECT * FROM truck_bills WHERE id = ?').get(req.params.id);
   if (!b) return res.status(404).json({ error: 'Not found' });
   if (!req.files || !req.files.length) return res.status(400).json({ error: 'Only images or PDF files (max 15MB)' });
-  const list = JSON.parse(b.receipts || '[]').concat(req.files.map(f => f.filename));
-  db.prepare('UPDATE truck_bills SET receipts = ? WHERE id = ?').run(JSON.stringify(list), b.id);
+  db.prepare('UPDATE truck_bills SET receipts = ? WHERE id = ?').run(JSON.stringify(JSON.parse(b.receipts || '[]').concat(req.files.map(f => f.filename))), b.id);
   audit(req, 'truck_bills', b.id, 'receipt', { files: req.files.map(f => f.originalname) });
   res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(b.id)));
 });
 app.delete('/api/truck-bills/:id/receipts/:file', auth, (req, res) => {
   const b = db.prepare('SELECT * FROM truck_bills WHERE id = ?').get(req.params.id);
   if (!b) return res.status(404).json({ error: 'Not found' });
-  const list = JSON.parse(b.receipts || '[]').filter(f => f !== req.params.file);
-  db.prepare('UPDATE truck_bills SET receipts = ? WHERE id = ?').run(JSON.stringify(list), b.id);
+  db.prepare('UPDATE truck_bills SET receipts = ? WHERE id = ?').run(JSON.stringify(JSON.parse(b.receipts || '[]').filter(f => f !== req.params.file)), b.id);
   audit(req, 'truck_bills', b.id, 'receipt_delete', { file: req.params.file });
   res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(b.id)));
 });
@@ -402,6 +655,34 @@ app.delete('/api/truck-bills/:id', auth, adminOnly, (req, res) => {
   audit(req, 'truck_bills', +req.params.id, 'delete');
   res.json({ ok: true });
 });
+
+// ---------- 卡车明细 truck quotes ----------
+const quoteValues = b => ({ company_name: str(b.company_name), state: str(b.state) && str(b.state).toUpperCase(), size: str(b.size),
+  price: num(b.price), price_unit: ['day', 'trip', 'hour'].includes(b.price_unit) ? b.price_unit : 'day', quote_date: str(b.quote_date) || today(), notes: str(b.notes) });
+app.get('/api/truck-quotes', auth, (req, res) => res.json(db.prepare(`SELECT q.*, (SELECT COUNT(*) FROM truck_bills b WHERE b.truck_quote_id = q.id) AS use_count
+  FROM truck_quotes q ORDER BY q.company_name COLLATE NOCASE, q.id DESC`).all()));
+app.post('/api/truck-quotes', auth, (req, res) => {
+  const v = quoteValues(req.body || {});
+  if (!v.company_name) return res.status(400).json({ error: 'Company is required' });
+  v.quote_no = nextNo('truck_quotes', 'quote_no', 'TQ');
+  const r = db.prepare(`INSERT INTO truck_quotes (${Object.keys(v).join(',')}) VALUES (${Object.keys(v).map(k => '@' + k).join(',')})`).run(v);
+  audit(req, 'truck_quotes', r.lastInsertRowid, 'create', v);
+  res.json(db.prepare('SELECT * FROM truck_quotes WHERE id = ?').get(r.lastInsertRowid));
+});
+app.put('/api/truck-quotes/:id', auth, (req, res) => {
+  const v = quoteValues(req.body || {});
+  if (!v.company_name) return res.status(400).json({ error: 'Company is required' });
+  db.prepare(`UPDATE truck_quotes SET ${Object.keys(v).map(k => k + ' = @' + k).join(',')} WHERE id = @id`).run({ ...v, id: req.params.id });
+  audit(req, 'truck_quotes', +req.params.id, 'update', v);
+  res.json(db.prepare('SELECT * FROM truck_quotes WHERE id = ?').get(req.params.id));
+});
+app.delete('/api/truck-quotes/:id', auth, adminOnly, (req, res) => {
+  db.prepare('UPDATE truck_bills SET truck_quote_id = NULL WHERE truck_quote_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM truck_quotes WHERE id = ?').run(req.params.id);
+  audit(req, 'truck_quotes', +req.params.id, 'delete');
+  res.json({ ok: true });
+});
+
 app.get('/api/files/:name', auth, (req, res) => {
   const name = path.basename(req.params.name);
   const p = path.join(UPLOAD_DIR, name);
@@ -449,9 +730,13 @@ app.get('/api/backup', auth, adminOnly, (req, res) => {
     exported_at: new Date().toISOString(),
     suppliers: db.prepare('SELECT * FROM suppliers').all(),
     customers: db.prepare('SELECT * FROM customers').all(),
-    lots: db.prepare('SELECT * FROM lots').all(),
+    orders: db.prepare('SELECT * FROM orders').all(),
+    invoices: db.prepare('SELECT * FROM invoices').all(),
+    checkout_groups: db.prepare('SELECT * FROM checkout_groups').all(),
     truck_bills: db.prepare('SELECT * FROM truck_bills').all(),
-    truck_bill_lots: db.prepare('SELECT * FROM truck_bill_lots').all(),
+    truck_bill_orders: db.prepare('SELECT * FROM truck_bill_orders').all(),
+    truck_quotes: db.prepare('SELECT * FROM truck_quotes').all(),
+    legacy_lots: db.prepare('SELECT * FROM lots').all(),
   };
   res.setHeader('Content-Disposition', `attachment; filename="liquidation-backup-${dump.exported_at.slice(0, 10)}.json"`);
   res.json(dump);
