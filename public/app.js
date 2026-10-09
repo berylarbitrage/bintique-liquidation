@@ -781,7 +781,7 @@ async function quickAddParty(kind, selId) {
 }
 
 
-// ---------- address verification (Mapbox, 同 pallet) ----------
+// ---------- address verification (Google Geocoding via /api/geocode, fallback Mapbox) ----------
 function mbParse(f) {
   const street = (f.address ? f.address + ' ' : '') + f.text;
   let city = '', state = '', zip = '';
@@ -793,6 +793,10 @@ function mbParse(f) {
   });
   const full = street + (city ? ', ' + city : '') + (state ? ', ' + state : '') + (zip ? ' ' + zip : '');
   return { street, city, state, zip, full: full || f.place_name, place_name: f.place_name };
+}
+async function geoSearch(q) {
+  if (CONFIG.geocoder === 'google') return api('/api/geocode?q=' + encodeURIComponent(q.trim()));
+  return mbSearch(q);
 }
 async function mbSearch(q) {
   const base = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q.trim()) + '.json?access_token=' + encodeURIComponent(CONFIG.mapbox_token || '') + '&country=us&limit=5&language=en';
@@ -816,11 +820,11 @@ function showMatches(statusId, results, onPick) {
   st.querySelectorAll('div[data-i]').forEach(d => d.onclick = () => { onPick(results[+d.dataset.i]); setAddrStatus(statusId, true); });
 }
 async function runVerify(statusId, q, onPick) {
-  if (!CONFIG.mapbox_token) return setAddrStatus(statusId, false, `<span style="color:var(--amb);font-size:9px">&#9888; MAPBOX_TOKEN ${LANG === 'zh' ? '未设置 (请在 Railway 环境变量里添加)' : 'is not set (add it in Railway variables)'}</span>`);
+  if (CONFIG.geocoder !== 'google' && !CONFIG.mapbox_token) return setAddrStatus(statusId, false, `<span style="color:var(--amb);font-size:9px">&#9888; GOOGLE_MAPS_API_KEY ${LANG === 'zh' ? '未设置 (请在 Railway 环境变量里添加)' : 'is not set (add it in Railway variables)'}</span>`);
   if (!q.trim()) return setAddrStatus(statusId, false, `<span style="color:var(--red);font-size:9px">${t('addr_not_found')}</span>`);
   setAddrStatus(statusId, false, `<span style="color:var(--g400);font-size:9px">${t('verifying')}</span>`);
-  try { showMatches(statusId, await mbSearch(q), onPick); }
-  catch (e) { setAddrStatus(statusId, false, `<span style="color:var(--amb);font-size:9px">&#9888; ${t('net_err')}</span>`); }
+  try { showMatches(statusId, await geoSearch(q), onPick); }
+  catch (e) { setAddrStatus(statusId, false, `<span style="color:var(--amb);font-size:9px">&#9888; ${CONFIG.geocoder === 'google' ? esc(e.message) : t('net_err')}</span>`); }
 }
 // 分栏地址 (addr1 / city / state / zip)
 function addrVerifyCard(prefix) {

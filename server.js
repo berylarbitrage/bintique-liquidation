@@ -690,8 +690,36 @@ app.get('/api/files/:name', auth, (req, res) => {
   res.sendFile(p);
 });
 
-// 地址验证用的 Mapbox token (在 Railway 设环境变量 MAPBOX_TOKEN, 用 pallet 同一个 pk.* token 即可)
-app.get('/api/config', auth, (req, res) => res.json({ mapbox_token: process.env.MAPBOX_TOKEN || '' }));
+// 地址验证: 优先 Google (Railway 环境变量 GOOGLE_MAPS_API_KEY, 需开通 Geocoding API), 否则用 Mapbox (MAPBOX_TOKEN)
+app.get('/api/config', auth, (req, res) => res.json({
+  geocoder: process.env.GOOGLE_MAPS_API_KEY ? 'google' : (process.env.MAPBOX_TOKEN ? 'mapbox' : ''),
+  mapbox_token: process.env.GOOGLE_MAPS_API_KEY ? '' : (process.env.MAPBOX_TOKEN || ''),
+}));
+
+// Google Geocoding 走后端代理, key 不暴露给浏览器
+app.get('/api/geocode', auth, async (req, res) => {
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  const q = str(req.query.q);
+  if (!key) return res.status(400).json({ error: 'GOOGLE_MAPS_API_KEY is not set' });
+  if (!q) return res.json([]);
+  try {
+    const url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + encodeURIComponent(q) + '&components=country:US&language=en&key=' + encodeURIComponent(key);
+    const d = await (await fetch(url)).json();
+    if (d.status === 'ZERO_RESULTS') return res.json([]);
+    if (d.status !== 'OK') return res.status(502).json({ error: 'Google geocode: ' + d.status + (d.error_message ? ' - ' + d.error_message : '') });
+    res.json(d.results.slice(0, 5).map(r => {
+      const c = type => r.address_components.find(x => x.types.includes(type));
+      const num = c('street_number'), route = c('route');
+      const street = [num && num.long_name, route && route.short_name].filter(Boolean).join(' ');
+      const cityC = c('locality') || c('sublocality') || c('postal_town') || c('administrative_area_level_3') || c('neighborhood');
+      const city = cityC ? cityC.long_name : '';
+      const state = (c('administrative_area_level_1') || {}).short_name || '';
+      const zip = (c('postal_code') || {}).long_name || '';
+      const full = street + (city ? ', ' + city : '') + (state ? ', ' + state : '') + (zip ? ' ' + zip : '');
+      return { street, city, state, zip, full: full || r.formatted_address, place_name: r.formatted_address, partial: !!r.partial_match };
+    }));
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
 
 // ---------- users (admin) ----------
 app.get('/api/users', auth, adminOnly, (req, res) => res.json(db.prepare('SELECT id, username, display_name, role, created_at FROM users ORDER BY id').all()));
