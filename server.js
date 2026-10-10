@@ -296,6 +296,47 @@ CREATE TABLE IF NOT EXISTS truck_bill_orders (
 `);
 try { db.exec('ALTER TABLE truck_bills ADD COLUMN truck_quote_id INTEGER'); } catch (e) {}
 try { db.exec('ALTER TABLE truck_bills ADD COLUMN size TEXT'); } catch (e) {}
+// 发票抬头 (卖方公司) 每张发票自己选; 不显示抬头的发票打印时不出公司信息
+try { db.exec('ALTER TABLE invoices ADD COLUMN seller_key TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE invoices ADD COLUMN hide_header INTEGER DEFAULT 0'); } catch (e) {}
+db.exec('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)');
+
+// ---------- 发票自定义 (全局): 抬头公司 + 按公司分组的付款方式 + 条款 / 页脚, 照 pallet.bintique.com ----------
+// 付款方式的账号只存数据库 (网页里填), 不写进代码
+const CO_ADDR = '18 Congress Circle West, Roselle, IL 60172', CO_PHONE = '(708) 850-2703';
+const blankPays = () => ['Zelle', 'ACH / Direct Deposit', 'Wire Transfer'].map(label => ({ show: false, label, l1: '', l2: '', l3: '' }));
+const DEFAULT_INV_SETTINGS = () => ({
+  default_company: 'bintique',
+  companies: [
+    { key: 'surplus', name: 'Surplus Lane Inc', address: CO_ADDR, phone: CO_PHONE, email: 'billing@bintique.com', pays: blankPays() },
+    { key: 'bintique', name: process.env.COMPANY_NAME || 'Bintique Inc', address: process.env.COMPANY_ADDRESS || CO_ADDR,
+      phone: process.env.COMPANY_PHONE || CO_PHONE, email: process.env.COMPANY_EMAIL || 'billing@bintique.com', pays: blankPays() },
+    { key: 'primeanchor', name: 'Prime Anchor Workforce Inc', address: CO_ADDR, phone: CO_PHONE, email: 'info@primeanchorworkforce.com', pays: blankPays() },
+  ],
+  terms: '', footer: 'Thank you for your business!',
+});
+function getInvSettings() {
+  const r = db.prepare("SELECT value FROM settings WHERE key = 'invoice'").get();
+  if (!r) return DEFAULT_INV_SETTINGS();
+  try { return JSON.parse(r.value); } catch (e) { return DEFAULT_INV_SETTINGS(); }
+}
+function cleanInvSettings(b) {
+  const s = v => String(v ?? '').trim().slice(0, 500);
+  const companies = (Array.isArray(b.companies) ? b.companies : []).slice(0, 10).map((c, n) => ({
+    key: s(c.key).replace(/[^a-z0-9_-]/gi, '') || 'co' + n, name: s(c.name), address: s(c.address), phone: s(c.phone), email: s(c.email),
+    pays: (Array.isArray(c.pays) ? c.pays : []).slice(0, 6).map(p => ({ show: !!p.show, label: s(p.label), l1: s(p.l1), l2: s(p.l2), l3: s(p.l3) })),
+  })).filter(c => c.name);
+  if (!companies.length) throw new Error('At least one company / 至少要有一个公司');
+  const def = companies.some(c => c.key === b.default_company) ? b.default_company : companies[0].key;
+  return { default_company: def, companies, terms: String(b.terms ?? '').slice(0, 4000), footer: String(b.footer ?? '').slice(0, 2000) };
+}
+app.get('/api/invoice-settings', auth, (req, res) => res.json(getInvSettings()));
+app.put('/api/invoice-settings', auth, (req, res) => {
+  let v; try { v = cleanInvSettings(req.body || {}); } catch (e) { return res.status(400).json({ error: e.message }); }
+  db.prepare("INSERT INTO settings (key, value) VALUES ('invoice', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(v));
+  audit(req, 'settings', 0, 'invoice', { companies: v.companies.map(c => c.name), default_company: v.default_company });
+  res.json(v);
+});
 
 const today = () => new Date().toISOString().slice(0, 10);
 const round2 = n => Math.round(n * 100) / 100;
@@ -511,7 +552,8 @@ app.put('/api/invoices/:id', auth, (req, res) => {
   if (!i) return res.status(404).json({ error: 'Not found' });
   const b = req.body || {};
   const v = { invoice_date: str(b.invoice_date), due_date: str(b.due_date), paid_amount: num(b.paid_amount), paid_date: str(b.paid_date),
-    payment_method: str(b.payment_method), bank: str(b.bank), their_invoice_no: str(b.their_invoice_no), notes: str(b.notes) };
+    payment_method: str(b.payment_method), bank: str(b.bank), their_invoice_no: str(b.their_invoice_no), notes: str(b.notes),
+    seller_key: b.seller_key === undefined ? i.seller_key : str(b.seller_key), hide_header: b.hide_header === undefined ? i.hide_header : (b.hide_header ? 1 : 0) };
   db.prepare(`UPDATE invoices SET ${Object.keys(v).map(k => k + ' = @' + k).join(',')} WHERE id = @id`).run({ ...v, id: i.id });
   // 付清 → 订单自动变已完成
   if (v.paid_amount >= i.total - 0.005 && i.total > 0)
@@ -767,6 +809,7 @@ app.get('/api/backup', auth, adminOnly, (req, res) => {
     truck_bills: db.prepare('SELECT * FROM truck_bills').all(),
     truck_bill_orders: db.prepare('SELECT * FROM truck_bill_orders').all(),
     truck_quotes: db.prepare('SELECT * FROM truck_quotes').all(),
+    settings: db.prepare('SELECT * FROM settings').all(),
     legacy_lots: db.prepare('SELECT * FROM lots').all(),
   };
   res.setHeader('Content-Disposition', `attachment; filename="liquidation-backup-${dump.exported_at.slice(0, 10)}.json"`);
