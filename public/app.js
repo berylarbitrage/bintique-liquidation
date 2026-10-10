@@ -573,7 +573,6 @@ function openInvoiceModal(id) {
       <tbody>${i.orders.map(o => `<tr onclick="closeModal();openOrderModal(${o.id})"><td class="tdn">${esc(o.order_no)}</td><td>${esc(o.title || '')}</td><td class="num">${esc(o.quantity)}</td><td class="num">${money(o.unit_price)}</td><td class="num">${money(o.total)}</td></tr>`).join('')}
       <tr><td colspan="4" style="font-weight:700">${t('group_total')}</td><td class="num" style="font-weight:800">${money(i.total)}</td></tr></tbody></table>
     <div class="modal-row" style="grid-template-columns:repeat(3,1fr)">${field(t('th_inv_date'), inp('i-invoice_date', i.invoice_date, 'date'))}${field(t('th_due'), inp('i-due_date', i.due_date, 'date'))}${field(t('their_inv'), inp('i-their_invoice_no', i.their_invoice_no))}</div>
-    ${invCustomPanel(i)}
     <div class="modal-section">${t('sec_pay')} <span style="float:right;font-weight:500;color:var(--g500)">${t('inv_paid_hint')}</span></div>
     ${payMethodsList()}
     <div class="modal-row" style="grid-template-columns:repeat(4,1fr)">${field(t('paid_amount'), `<div style="display:flex;gap:4px">${inp('i-paid_amount', i.paid_amount, 'number')}<button class="btn btn-out btn-sm" type="button" style="white-space:nowrap" onclick="$('i-paid_amount').value=${+i.total};if(!$('i-paid_date').value)$('i-paid_date').value=today()">${LANG === 'zh' ? '全额' : 'Full'}</button></div>`)}
@@ -584,16 +583,14 @@ function openInvoiceModal(id) {
     <div class="modal-row" style="margin-top:10px">${field(t('notes'), `<textarea class="modal-input" id="i-notes">${esc(i.notes || '')}</textarea>`, true)}</div>
     <div class="modal-actions">
       ${currentUser.role === 'admin' ? `<button class="btn-del" onclick="deleteInvoice(${i.id})">${t('delete')}</button>` : ''}
-      <button class="btn btn-out" onclick="printInvoice(${i.id})">${t('print')}</button>
+      <button class="btn btn-out" onclick="printInvoice(${i.id})">${LANG === 'zh' ? '🧾 抬头 / 付款方式 · 预览打印' : '🧾 Header / Payment · Preview'}</button>
       <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button><button class="btn-save" id="i-save" onclick="saveInvoice(${i.id})">${t('save')}</button>
     </div>`, 760);
 }
 async function saveInvoice(id) {
   const body = {}; ['invoice_date', 'due_date', 'their_invoice_no', 'paid_amount', 'paid_date', 'payment_method', 'bank', 'notes'].forEach(k => body[k] = $('i-' + k).value);
-  Object.assign(body, invCustomValues());
   const btn = $('i-save'); btn.disabled = true;
   try {
-    await saveInvSettings();
     await api('/api/invoices/' + id, { method: 'PUT', body });
     const files = $('i-files').files;
     if (files.length) {
@@ -609,52 +606,104 @@ async function deleteInvoice(id) {
   if (!confirm(t('confirm_delete'))) return;
   try { await api('/api/invoices/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
-// ---------- 发票自定义 (照 pallet.bintique.com): 抬头只改当前这张发票; 付款方式 / 条款 / 页脚为全局设置 ----------
-const invSeller = i => (INV_SET.companies || []).find(c => c.key === i.seller_key) || (INV_SET.companies || []).find(c => c.key === INV_SET.default_company) || (INV_SET.companies || [])[0] || CONFIG.company || {};
-function invCustomPanel(i) {
-  const cos = INV_SET.companies || [], cur = invSeller(i).key;
+// ---------- 发票自定义 + 预览 (照 pallet.bintique.com) ----------
+// 每张发票点「打印」都先打开预览: 上面选抬头公司 / 编辑公司信息和付款方式, 下面实时预览, 再 Print / PDF。
+// 抬头只改当前这张发票; 公司信息 / 付款方式 / 条款 / 页脚为全局设置 (应用到所有发票)
+const invSeller = (i, set = INV_SET) => (set.companies || []).find(c => c.key === i.seller_key) || (set.companies || []).find(c => c.key === set.default_company) || (set.companies || [])[0] || CONFIG.company || {};
+let IC = null; // 预览草稿 { id, set, seller_key, hide }
+const zh = (a, b) => LANG === 'zh' ? a : b;
+function invCustomPanel() {
+  const cos = IC.set.companies || [], cur = IC.seller_key;
   const sm = 'font-size:10px;color:var(--g500)';
-  const coCard = c => `<label class="ic-co" data-key="${esc(c.key)}" style="flex:1;min-width:200px;display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:2px solid ${c.key === cur ? '#F79009' : 'var(--g200)'};border-radius:8px;background:#fff;cursor:pointer">
-      <input type="radio" name="ic-seller" value="${esc(c.key)}" ${c.key === cur ? 'checked' : ''} onchange="document.querySelectorAll('.ic-co').forEach(x=>x.style.borderColor=x.dataset.key===this.value?'#F79009':'var(--g200)')" style="margin-top:3px"/>
-      <div><b style="color:#8B6914">${esc(c.name)}</b><div style="${sm}">${esc([c.address, c.phone, c.email].filter(Boolean).join(' · '))}</div></div></label>`;
-  const pin = (ci, pi, k, v, ph, bold) => `<input class="modal-input" data-ci="${ci}" data-pi="${pi}" data-k="${k}" value="${esc(v || '')}" placeholder="${esc(ph)}" style="margin-top:4px;font-size:11px;padding:5px 7px${bold ? ';font-weight:700' : ''}"/>`;
-  const payCard = (c, ci) => `<div style="border:1px solid var(--g200);border-radius:8px;padding:8px;margin-top:8px;background:#fff">
-      <div style="font-weight:700;color:#8B6914;font-size:12px;margin-bottom:4px">${esc(c.name)}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">${(c.pays || []).map((p, pi) => `<div style="border:1px solid var(--g200);border-radius:6px;padding:6px">
-        <label style="${sm};display:flex;gap:4px;align-items:center"><input type="checkbox" data-ci="${ci}" data-pi="${pi}" data-k="show" ${p.show ? 'checked' : ''}/> ${LANG === 'zh' ? '显示' : 'Show'}</label>
-        ${pin(ci, pi, 'label', p.label, 'Zelle / ACH…', 1)}${pin(ci, pi, 'l1', p.l1, LANG === 'zh' ? '详情 1' : 'Detail 1')}${pin(ci, pi, 'l2', p.l2, LANG === 'zh' ? '详情 2' : 'Detail 2')}${pin(ci, pi, 'l3', p.l3, LANG === 'zh' ? '详情 3（可选）' : 'Detail 3 (optional)')}</div>`).join('')}</div></div>`;
-  return `<div id="ic-panel" style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px;margin:6px 0 12px">
-    <div style="font-weight:700;color:#92400e;font-size:12px">${LANG === 'zh' ? '发票自定义 — 抬头只改当前这张发票；付款方式 / 条款 / 页脚为全局设置（应用到所有发票）' : 'Invoice customization — header applies to this invoice only; payment methods / terms / footer are global (all invoices)'}</div>
-    <div style="${sm};margin:6px 0 4px">${LANG === 'zh' ? '卖方信息（抬头）/ Seller Info' : 'Seller Info (header)'}</div>
+  const cin = (path, v, ph, st = '') => `<input class="modal-input" data-path="${path}" value="${esc(v || '')}" placeholder="${esc(ph)}" style="margin-top:4px;font-size:11px;padding:5px 7px;${st}"/>`;
+  const coCard = (c, ci) => `<label class="ic-co" data-key="${esc(c.key)}" style="flex:1;min-width:200px;display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:2px solid ${c.key === cur ? '#F79009' : 'var(--g200)'};border-radius:8px;background:#fff;cursor:pointer">
+      <input type="radio" name="ic-seller" value="${esc(c.key)}" ${c.key === cur ? 'checked' : ''} style="margin-top:3px"/>
+      <div><b style="color:#8B6914">${esc(c.name || '—')}${c.key === cur ? ` <span style="color:#F79009">· ${zh('使用中', 'in use')}</span>` : ''}</b><div style="${sm}">${esc([c.address, c.phone, c.email].filter(Boolean).join(' · '))}</div></div></label>`;
+  const coEdit = (c, ci) => `<div style="border:1px solid ${c.key === cur ? '#F79009' : 'var(--g200)'};border-radius:8px;padding:8px;margin-top:8px;background:#fff">
+      <div style="font-weight:700;color:#8B6914;font-size:12px;margin-bottom:2px">${esc(c.name || '—')}</div>
+      <div style="display:grid;grid-template-columns:2fr 3fr 1.3fr 2fr;gap:6px">${cin(`${ci}.name`, c.name, zh('公司名称', 'Company name'), 'font-weight:700')}${cin(`${ci}.address`, c.address, zh('地址', 'Address'))}${cin(`${ci}.phone`, c.phone, zh('电话', 'Phone'))}${cin(`${ci}.email`, c.email, 'Email')}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:6px">${(c.pays || []).map((p, pi) => `<div style="border:1px solid ${p.show ? '#F79009' : 'var(--g200)'};border-radius:6px;padding:6px">
+        <label style="${sm};display:flex;gap:4px;align-items:center"><input type="checkbox" data-path="${ci}.pays.${pi}.show" ${p.show ? 'checked' : ''}/> ${zh('显示', 'Show')}</label>
+        ${cin(`${ci}.pays.${pi}.label`, p.label, 'Zelle / ACH…', 'font-weight:700')}${cin(`${ci}.pays.${pi}.l1`, p.l1, zh('详情 1', 'Detail 1'))}${cin(`${ci}.pays.${pi}.l2`, p.l2, zh('详情 2', 'Detail 2'))}${cin(`${ci}.pays.${pi}.l3`, p.l3, zh('详情 3（可选）', 'Detail 3 (optional)'))}</div>`).join('')}
+        <button type="button" class="btn btn-out btn-sm" style="align-self:center" onclick="icAddPay(${ci})">${zh('+ 付款方式', '+ Method')}</button></div></div>`;
+  return `<div id="ic-panel" style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px;margin-bottom:12px">
+    <div style="font-weight:700;color:#92400e;font-size:12px">${zh('发票自定义 — 抬头只改当前这张发票；公司信息 / 付款方式 / 条款 / 页脚为全局设置（应用到所有发票）', 'Invoice customization — header applies to this invoice only; company info / payment methods / terms / footer are global')}</div>
+    <div style="${sm};margin:6px 0 4px">${zh('卖方信息（抬头）/ Seller Info <b style="color:var(--red)">（只修改当前这张发票，不影响其他发票）</b>', 'Seller Info (header) — this invoice only')}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">${cos.map(coCard).join('')}</div>
-    <label style="display:flex;gap:6px;align-items:center;font-size:11px;margin-top:6px"><input type="checkbox" id="ic-hide" ${+i.hide_header ? 'checked' : ''}/> ${LANG === 'zh' ? '此发票不显示抬头' : 'Hide header on this invoice'}</label>
-    <div style="${sm};margin-top:10px">${LANG === 'zh' ? '付款方式 / Payment Methods（按公司分组，发票自动跟随抬头公司；勾「显示」才打印）' : 'Payment Methods (grouped by company; the invoice uses its header company; only checked ones print)'}</div>
-    ${cos.map(payCard).join('')}
-    <div class="modal-row" style="margin-top:10px">${field(LANG === 'zh' ? '条款 Terms（全局）' : 'Terms (global)', `<textarea class="modal-input" id="ic-terms" style="min-height:50px">${esc(INV_SET.terms || '')}</textarea>`, true)}</div>
-    <div class="modal-row">${field(LANG === 'zh' ? '页脚 Footer（全局）' : 'Footer (global)', `<textarea class="modal-input" id="ic-footer" style="min-height:40px">${esc(INV_SET.footer || '')}</textarea>`, true)}</div>
+    <label style="display:flex;gap:6px;align-items:center;font-size:11px;margin-top:6px"><input type="checkbox" id="ic-hide" ${IC.hide ? 'checked' : ''}/> ${zh('此发票不显示抬头', 'Hide header on this invoice')}</label>
+    <div style="${sm};margin-top:10px;display:flex;justify-content:space-between;align-items:center">${zh('公司信息 + 付款方式 / Payment Methods（按公司分组，发票自动跟随抬头公司；勾「显示」才打印）', 'Company info + payment methods (grouped by company; only checked ones print)')}
+      <button type="button" class="btn btn-out btn-sm" onclick="icAddCompany()">${zh('+ 添加公司', '+ Company')}</button></div>
+    ${cos.map(coEdit).join('')}
+    <div class="modal-row" style="margin-top:10px">${field(zh('条款 Terms（全局）', 'Terms (global)'), `<textarea class="modal-input" id="ic-terms" style="min-height:50px">${esc(IC.set.terms || '')}</textarea>`, true)}</div>
+    <div class="modal-row">${field(zh('页脚 Footer（全局）', 'Footer (global)'), `<textarea class="modal-input" id="ic-footer" style="min-height:40px">${esc(IC.set.footer || '')}</textarea>`, true)}</div>
   </div>`;
 }
-function invCustomValues() {
-  const r = document.querySelector('input[name="ic-seller"]:checked');
-  return { seller_key: r ? r.value : null, hide_header: $('ic-hide').checked };
+function printInvoice(id) {
+  const i = INVOICES.find(x => x.id === id); if (!i) return;
+  IC = { id, set: JSON.parse(JSON.stringify(INV_SET)), seller_key: invSeller(i).key, hide: !!+i.hide_header };
+  openModal(`${esc(i.invoice_no)} <span style="font-size:11px;color:var(--g500);font-weight:500">${esc(i.party_name || '')}</span>
+    <span style="float:right;display:flex;gap:6px;margin-right:8px">
+      <button class="btn btn-out btn-sm" onclick="icToggle()">⚙ ${zh('编辑公司/付款', 'Company / Payment')}</button>
+      <button class="btn-save" style="padding:5px 12px" onclick="icSave()">${t('save')}</button>
+      <button class="btn btn-out btn-sm" onclick="icSave(true)">Print / PDF</button></span>`,
+    `<div id="ic-wrap">${invCustomPanel()}</div>
+    <iframe id="ic-preview" style="width:100%;height:720px;border:1px solid var(--g200);border-radius:8px;background:#fff"></iframe>`, 1000);
+  icBind(); icRender();
 }
-async function saveInvSettings() {
-  const next = JSON.parse(JSON.stringify(INV_SET));
-  document.querySelectorAll('#ic-panel [data-ci]').forEach(el => {
-    const p = next.companies[+el.dataset.ci].pays[+el.dataset.pi];
-    p[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
-  });
-  next.terms = $('ic-terms').value; next.footer = $('ic-footer').value;
-  INV_SET = await api('/api/invoice-settings', { method: 'PUT', body: next });
+function icBind() {
+  const w = $('ic-wrap');
+  w.oninput = w.onchange = e => {
+    const el = e.target;
+    if (el.name === 'ic-seller') { IC.seller_key = el.value; icRepaint(); return; }
+    if (el.id === 'ic-hide') IC.hide = el.checked;
+    else if (el.id === 'ic-terms') IC.set.terms = el.value;
+    else if (el.id === 'ic-footer') IC.set.footer = el.value;
+    else if (el.dataset.path) {
+      const ks = el.dataset.path.split('.'); let o = IC.set.companies;
+      ks.slice(0, -1).forEach(k => o = o[k]);
+      o[ks[ks.length - 1]] = el.type === 'checkbox' ? el.checked : el.value;
+      if (el.type === 'checkbox' && e.type === 'change') { icRepaint(); return; }
+    }
+    icRender();
+  };
+}
+function icRepaint() { const y = $('modal-box').scrollTop; $('ic-wrap').innerHTML = invCustomPanel(); $('modal-box').scrollTop = y; icRender(); }
+function icToggle() { const w = $('ic-wrap'); w.style.display = w.style.display === 'none' ? '' : 'none'; }
+function icAddPay(ci) { IC.set.companies[ci].pays.push({ show: true, label: '', l1: '', l2: '', l3: '' }); icRepaint(); }
+function icAddCompany() {
+  const name = prompt(zh('公司名称', 'Company name')); if (!name || !name.trim()) return;
+  IC.set.companies.push({ key: 'co' + Date.now().toString(36), name: name.trim(), address: '', phone: '', email: '',
+    pays: ['Zelle', 'ACH / Direct Deposit', 'Wire Transfer'].map(label => ({ show: false, label, l1: '', l2: '', l3: '' })) });
+  icRepaint();
+}
+function icRender() {
+  const i = INVOICES.find(x => x.id === IC.id), f = $('ic-preview'); if (!i || !f) return;
+  f.srcdoc = docHtml(i.invoice_no, [invoicePage({ ...i, seller_key: IC.seller_key, hide_header: IC.hide }, IC.set)], true);
+}
+async function icSave(andPrint) {
+  const w = andPrint ? window.open('', '_blank') : null; // 先开窗口 (点击当下), 保存完再写内容, 免得被拦截
+  try {
+    INV_SET = await api('/api/invoice-settings', { method: 'PUT', body: IC.set });
+    await api('/api/invoices/' + IC.id, { method: 'PUT', body: { seller_key: IC.seller_key, hide_header: IC.hide } });
+    const i = INVOICES.find(x => x.id === IC.id);
+    if (i) { i.seller_key = IC.seller_key; i.hide_header = IC.hide ? 1 : 0; }
+    toast(t('saved'));
+    if (andPrint && i) docWindow(i.invoice_no, [invoicePage(i, INV_SET)], w);
+    refreshAll();
+  } catch (e) { if (w) w.close(); toast(e.message, 'error'); }
 }
 
 // ---------- 打印单据: PO / SO / Invoice (同一套版式) ----------
 const LT_EN = { pallet: 'Pallet', truckload: 'Truckload', box: 'Box', gaylord: 'Gaylord' };
-function docWindow(title, pages) {
-  const w = window.open('', '_blank'); if (!w) { toast('Popup blocked', 'error'); return; }
+function docWindow(title, pages, w) {
+  w = w || window.open('', '_blank'); if (!w) { toast('Popup blocked', 'error'); return; }
+  w.document.write(docHtml(title, pages));
+  w.document.close();
+}
+function docHtml(title, pages, preview) {
   const coOf = pg => pg.co || CONFIG.company || {};
   const coLines = co => [co.address, [co.phone, co.email].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join('<br>');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
     body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1d2939;margin:0;padding:40px}
     .page{max-width:820px;margin:auto}.page+.page{page-break-before:always;margin-top:60px}
     .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #8B6914;padding-bottom:16px}
@@ -682,8 +731,7 @@ function docWindow(title, pages) {
       ${pg.terms ? `<div style="margin-top:20px"><div class="lbl">Terms</div><div style="font-size:12px;white-space:pre-wrap">${esc(pg.terms)}</div></div>` : ''}
       ${pg.footer ? `<p style="margin-top:28px;text-align:center;font-size:12px;color:#667085;white-space:pre-wrap">${esc(pg.footer)}</p>` : ''}
       ${pg.sign ? `<div class="sign">${pg.sign.map(x => `<div>${esc(x)}</div>`).join('')}</div>` : ''}</div>`).join('')}
-    <p class="np" style="text-align:center;margin-top:30px"><button onclick="print()" style="padding:8px 24px;font-size:14px">Print / Save as PDF</button></p></body></html>`);
-  w.document.close();
+    ${preview ? '' : '<p class="np" style="text-align:center;margin-top:30px"><button onclick="print()" style="padding:8px 24px;font-size:14px">Print / Save as PDF</button></p>'}</body></html>`;
 }
 const partyLines = (p, bill) => [p.name, p.contact ? 'Attn: ' + p.contact : '', (bill ? (p.bill_same !== '1' && fmtAddr(p, true)) || fmtAddr(p) : fmtAddr(p)), [p.phone, p.email].filter(Boolean).join(' · ')];
 function orderDocPage(o) {
@@ -710,13 +758,12 @@ function printOrders(ids) {
   docWindow(list.length === 1 ? list[0].order_no : `${list[0].order_type === 'sales' ? 'SO' : 'PO'} x${list.length}`, list.map(orderDocPage));
 }
 function printSelected(type) { printOrders(applySort(type === 'sales' ? 'so' : 'po', orderRows(type), ORDER_GET).filter(o => SEL[type].has(o.id)).map(o => o.id)); }
-function printInvoice(id) {
-  const i = INVOICES.find(x => x.id === id); if (!i) return;
+function invoicePage(i, set) {
   const isS = i.invoice_type === 'sales';
   const party = (isS ? CUSTOMERS : SUPPLIERS).find(p => p.id === i.party_id) || { name: i.party_name || '' };
   const ship = isS ? [...new Set(i.orders.map(o => (ORDERS.find(x => x.id === o.id) || {}).address).filter(Boolean))] : [];
-  const seller = invSeller(i);
-  docWindow(i.invoice_no, [{
+  const seller = invSeller(i, set);
+  return {
     heading: isS ? t('inv_sales') : t('inv_purchase'), no: i.invoice_no, withOrderNo: true,
     meta: [['Date', i.invoice_date], ['Due', i.due_date], ['Ref', i.their_invoice_no]],
     blocks: [{ label: isS ? t('bill_to') : t('vendor'), lines: partyLines(party, true) }, ...(ship.length ? [{ label: 'Ship To', lines: [party.name, ...ship] }] : [])],
@@ -725,8 +772,8 @@ function printInvoice(id) {
     notes: i.notes,
     // 抬头 / 付款方式跟着这张发票选的公司; 条款 / 页脚是全局设置
     co: seller, noHeader: !!+i.hide_header,
-    pays: (seller.pays || []).filter(x => x.show && x.label), terms: INV_SET.terms, footer: INV_SET.footer,
-  }]);
+    pays: (seller.pays || []).filter(x => x.show && x.label), terms: set.terms, footer: set.footer,
+  };
 }
 async function invoiceOrder(id) {
   try {
