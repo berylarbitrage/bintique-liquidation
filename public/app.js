@@ -432,20 +432,21 @@ async function openOrderModal(id, type, preset) {
       ${field(isSO ? t('f_delivery_date') : t('f_pickup_date'), inp('o-sched_date', o.sched_date, 'date'))}
       ${field(isSO ? t('f_delivery_addr') : t('f_pickup_addr'), `<div style="display:flex;gap:6px">${inp('o-address', o.address, 'text', `oninput="addrResetInline('o-addr-status')"`)}<button class="btn btn-grn btn-sm" type="button" onclick="addrVerifyInline('o-address','o-addr-status')">${t('verify')}</button></div><div id="o-addr-status"></div>`)}
     </div>
-    ${isSO ? `<div class="modal-section">${t('sec_so_pay')}</div><div id="o-pay">${soPayBox(soSellerKey(o), o.seller_key)}</div>` : ''}
+    ${isSO ? `<div class="modal-section">${t('sec_so_pay')}</div><div id="o-pay">${soPayInit(o)}</div>` : ''}
     <div class="profit-box" id="o-preview"></div>
     <div class="modal-row">${field(t('notes'), `<textarea class="modal-input" id="o-notes">${esc(o.notes || '')}</textarea>`, true)}</div>
     ${hist ? `<div class="modal-section">${t('sec_history')}</div><div style="max-height:140px;overflow:auto">${hist}</div>` : ''}
     <div class="modal-actions">
       ${id && currentUser.role === 'admin' ? `<button class="btn-del" onclick="deleteOrder(${id})">${t('delete')}</button>` : ''}
       ${id && !isSO && o.status !== 'cancelled' ? `<button class="btn btn-grn" onclick="sellFromPO(${id})">${t('create_so')}</button>` : ''}
-      ${id ? `<button class="btn btn-out" onclick="printOrders([${id}], $('o-seller_key') && $('o-seller_key').value)">${t(isSO ? 'print_so' : 'print_po')}</button>` : ''}
+      ${id ? `<button class="btn btn-out" onclick="printOrders([${id}], SP && SP.key, SP && SP.set)">${t(isSO ? 'print_so' : 'print_po')}</button>` : ''}
       ${id ? (o.invoice_id ? `<button class="btn btn-out" onclick="printInvoice(${o.invoice_id})">${t('print_inv')}</button>`
         : o.status !== 'cancelled' ? `<button class="btn btn-out" onclick="invoiceOrder(${id})">${t('make_invoice')}</button>` : '') : ''}
       <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn-save" id="o-save" onclick="saveOrder(${id || 'null'})">${t('save')}</button>
     </div>`, 820);
   window._editOrder = o;
+  if (!isSO) SP = null; else spBind();
   if (o.address && o.address_verified === '1') setAddrStatus('o-addr-status', true);
   const partyEl = $(isSO ? 'o-customer_id' : 'o-supplier_id');
   partyEl.addEventListener('change', orderPartyDefaults);
@@ -527,6 +528,7 @@ async function saveOrder(id) {
   if (body.address && !body.address_verified) return toast(t('need_verify'), 'error');
   const btn = $('o-save'); btn.disabled = true;
   try {
+    if (body.order_type === 'sales' && SP && SP.dirty) { INV_SET = await api('/api/invoice-settings', { method: 'PUT', body: SP.set }); SP.dirty = false; }
     const saved = await api(id ? '/api/orders/' + id : '/api/orders', { method: id ? 'PUT' : 'POST', body });
     closeModal(); toast(t('saved') + ' · ' + saved.order_no); refreshAll();
   } catch (e) { toast(e.message, 'error'); }
@@ -613,16 +615,54 @@ async function deleteInvoice(id) {
 const invSeller = (i, set = INV_SET) => (set.companies || []).find(c => c.key === i.seller_key) || (set.companies || []).find(c => c.key === set.default_company) || (set.companies || [])[0] || CONFIG.company || {};
 // SO 的收款信息: 自己选的公司 > 发票选的公司 > 默认公司; 付款方式内容和发票共用 (全局设置)
 const soSellerKey = o => invSeller({ seller_key: o.seller_key || o.invoice_seller_key }).key || '';
-function soPayBox(key, picked) { // picked: 手动选过才存, 否则跟发票/默认公司
-  const cos = INV_SET.companies || [], co = invSeller({ seller_key: key }), pays = (co.pays || []).filter(x => x.show && x.label);
-  return `<input type="hidden" id="o-seller_key" value="${picked ? esc(co.key || '') : ''}"/>
+// SP: 编辑 SO 时的收款信息草稿 { set: 抬头/付款方式 (全局, 和发票共用), key: 选的抬头, picked: 手动选过才存, dirty: 改过设置要保存 }
+let SP = null;
+function soPayInit(o) {
+  SP = { set: JSON.parse(JSON.stringify(INV_SET)), key: soSellerKey(o), picked: !!o.seller_key, dirty: false };
+  return soPayBox();
+}
+function soPayBox() {
+  const cos = SP.set.companies || [], co = invSeller({ seller_key: SP.key }, SP.set), ci = cos.indexOf(co);
+  const sm = 'font-size:10px;color:var(--g500)';
+  const cin = (path, v, ph, st = '') => `<input class="modal-input" data-sp="${path}" value="${esc(v || '')}" placeholder="${esc(ph)}" style="margin-top:4px;font-size:11px;padding:5px 7px;${st}"/>`;
+  return `<input type="hidden" id="o-seller_key" value="${SP.picked ? esc(co.key || '') : ''}"/>
     <div style="display:flex;gap:8px;flex-wrap:wrap">${cos.map(c => `<label style="flex:1;min-width:180px;display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border:2px solid ${c.key === co.key ? '#F79009' : 'var(--g200)'};border-radius:8px;background:#fff;cursor:pointer">
-      <input type="radio" name="o-seller" ${c.key === co.key ? 'checked' : ''} onchange="$('o-pay').innerHTML=soPayBox('${esc(c.key)}', 1)" style="margin-top:3px"/>
-      <div><b style="color:#8B6914;font-size:12px">${esc(c.name || '—')}</b><div style="font-size:10px;color:var(--g500)">${esc([c.address, c.phone, c.email].filter(Boolean).join(' · '))}</div></div></label>`).join('')}</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:8px">${pays.length ? pays.map(x =>
-      `<div style="border:1px solid var(--g200);border-radius:8px;padding:7px 10px;font-size:11px;line-height:1.5;background:var(--g50)"><b>${esc(x.label)}</b>${[x.l1, x.l2, x.l3].filter(Boolean).map(l => '<br>' + esc(l)).join('')}</div>`).join('')
-      : `<div style="font-size:11px;color:var(--g500)">${zh('这个公司还没有勾「显示」的付款方式', 'No payment methods enabled for this company')}</div>`}</div>
-    <div style="font-size:10px;color:var(--g500);margin-top:4px">${zh('付款方式内容为全局设置, 在发票「🧾 抬头 / 付款方式」里编辑', 'Payment method details are global — edit them in an invoice\'s Header / Payment preview')}</div>`;
+      <input type="radio" name="o-seller" value="${esc(c.key)}" ${c.key === co.key ? 'checked' : ''} style="margin-top:3px"/>
+      <div><b style="color:#8B6914;font-size:12px">${esc(c.name || '—')}</b><div style="${sm}">${esc([c.address, c.phone, c.email].filter(Boolean).join(' · '))}</div></div></label>`).join('')}
+      <button type="button" class="btn btn-out btn-sm" style="align-self:center" onclick="spAddCompany()">${zh('+ 添加抬头', '+ Header')}</button></div>
+    ${ci < 0 ? '' : `<div style="border:1px solid #F79009;border-radius:8px;padding:8px;margin-top:8px;background:#FFFBEB">
+      <div style="display:grid;grid-template-columns:2fr 3fr 1.3fr 2fr;gap:6px">${cin('name', co.name, zh('公司名称', 'Company name'), 'font-weight:700')}${cin('address', co.address, zh('地址', 'Address'))}${cin('phone', co.phone, zh('电话', 'Phone'))}${cin('email', co.email, 'Email')}</div>
+      <div style="${sm};margin-top:8px">${zh('这个抬头的收款方式 — 勾「显示」的才打印', 'Payment methods for this header — only checked ones print')}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-top:4px">${(co.pays || []).map((p, pi) => `<div style="border:1px solid ${p.show ? '#F79009' : 'var(--g200)'};border-radius:6px;padding:6px;background:#fff">
+        <div style="display:flex;justify-content:space-between;align-items:center"><label style="${sm};display:flex;gap:4px;align-items:center"><input type="checkbox" data-sp="pays.${pi}.show" ${p.show ? 'checked' : ''}/> ${zh('显示', 'Show')}</label>
+          <button type="button" title="${zh('删除', 'Remove')}" onclick="spDelPay(${pi})" style="border:0;background:none;color:var(--g500);cursor:pointer;font-size:13px">×</button></div>
+        ${cin(`pays.${pi}.label`, p.label, 'Zelle / ACH…', 'font-weight:700')}${cin(`pays.${pi}.l1`, p.l1, zh('详情 1', 'Detail 1'))}${cin(`pays.${pi}.l2`, p.l2, zh('详情 2', 'Detail 2'))}${cin(`pays.${pi}.l3`, p.l3, zh('详情 3（可选）', 'Detail 3 (optional)'))}</div>`).join('')}
+        <button type="button" class="btn btn-out btn-sm" style="align-self:center" onclick="spAddPay()">${zh('+ 收款方式', '+ Method')}</button></div></div>`}
+    <div style="${sm};margin-top:4px">${zh('抬头和收款方式为全局设置 (发票也用同一套), 点「保存」一起保存', 'Headers and payment methods are global (shared with invoices) — saved with the order')}</div>`;
+}
+function spRepaint() { const y = $('modal-box').scrollTop; $('o-pay').innerHTML = soPayBox(); $('modal-box').scrollTop = y; }
+function spCo() { return invSeller({ seller_key: SP.key }, SP.set); }
+function spBind() {
+  const w = $('o-pay'); if (!w) return;
+  w.oninput = w.onchange = e => {
+    const el = e.target;
+    if (el.name === 'o-seller') { if (e.type === 'change') { SP.key = el.value; SP.picked = true; spRepaint(); } return; }
+    if (!el.dataset.sp) return;
+    const ks = el.dataset.sp.split('.'); let o = spCo();
+    ks.slice(0, -1).forEach(k => o = o[k]);
+    o[ks[ks.length - 1]] = el.type === 'checkbox' ? el.checked : el.value;
+    SP.dirty = true;
+    if (el.type === 'checkbox' && e.type === 'change') spRepaint();
+  };
+}
+function spAddPay() { const c = spCo(); (c.pays = c.pays || []).push({ show: true, label: '', l1: '', l2: '', l3: '' }); SP.dirty = true; spRepaint(); }
+function spDelPay(pi) { spCo().pays.splice(pi, 1); SP.dirty = true; spRepaint(); }
+function spAddCompany() {
+  const name = prompt(zh('抬头公司名称', 'Header company name')); if (!name || !name.trim()) return;
+  const key = 'co' + Date.now().toString(36);
+  SP.set.companies.push({ key, name: name.trim(), address: '', phone: '', email: '',
+    pays: ['Zelle', 'ACH / Direct Deposit', 'Wire Transfer'].map(label => ({ show: false, label, l1: '', l2: '', l3: '' })) });
+  Object.assign(SP, { key, picked: true, dirty: true }); spRepaint();
 }
 let IC = null; // 预览草稿 { id, set, seller_key, hide }
 const zh = (a, b) => LANG === 'zh' ? a : b;
@@ -748,9 +788,9 @@ function docHtml(title, pages, preview) {
     ${preview ? '' : '<p class="np" style="text-align:center;margin-top:30px"><button onclick="print()" style="padding:8px 24px;font-size:14px">Print / Save as PDF</button></p>'}</body></html>`;
 }
 const partyLines = (p, bill) => [p.name, p.contact ? 'Attn: ' + p.contact : '', (bill ? (p.bill_same !== '1' && fmtAddr(p, true)) || fmtAddr(p) : fmtAddr(p)), [p.phone, p.email].filter(Boolean).join(' · ')];
-function orderDocPage(o) {
+function orderDocPage(o, set = INV_SET) {
   const isSO = o.order_type === 'sales';
-  const seller = isSO ? invSeller({ seller_key: soSellerKey(o) }) : null;
+  const seller = isSO ? invSeller({ seller_key: o.seller_key || o.invoice_seller_key }, set) : null;
   const party = (isSO ? CUSTOMERS.find(p => p.id === o.customer_id) : SUPPLIERS.find(p => p.id === o.supplier_id)) || { name: o.customer_name || o.supplier_name || '' };
   const pickup = isSO && o.fulfillment === 'pickup';
   // 自提 SO: 提货地点 = 关联 PO 的提货地址 (没填就用那个货源的地址)
@@ -769,10 +809,10 @@ function orderDocPage(o) {
     sign: isSO ? ['Authorized Signature', 'Customer Signature / Date'] : ['Authorized Signature', 'Vendor Signature / Date'],
   };
 }
-function printOrders(ids, sellerKey) {
+function printOrders(ids, sellerKey, set) {
   const list = ids.map(id => ORDERS.find(o => o.id === id)).filter(Boolean).map(o => sellerKey ? { ...o, seller_key: sellerKey } : o);
   if (!list.length) return toast(t('select_first'), 'error');
-  docWindow(list.length === 1 ? list[0].order_no : `${list[0].order_type === 'sales' ? 'SO' : 'PO'} x${list.length}`, list.map(orderDocPage));
+  docWindow(list.length === 1 ? list[0].order_no : `${list[0].order_type === 'sales' ? 'SO' : 'PO'} x${list.length}`, list.map(o => orderDocPage(o, set)));
 }
 function printSelected(type) { printOrders(applySort(type === 'sales' ? 'so' : 'po', orderRows(type), ORDER_GET).filter(o => SEL[type].has(o.id)).map(o => o.id)); }
 function invoicePage(i, set) {
