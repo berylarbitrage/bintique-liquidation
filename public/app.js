@@ -24,7 +24,7 @@ const I18N = {
     pay_paid: '已付清', pay_partial: '部分付款', pay_unpaid: '未付', pay_uninvoiced: '未开票', in_checkout: '待结账',
     lt_pallet: '板 (Pallet)', lt_truckload: '车 (Truckload)', lt_box: '箱 (Box)', lt_gaylord: 'Gaylord',
     s_revenue: '销售额', s_cogs: '销售成本', s_profit: '毛利', s_margin: '毛利率', s_purchases: '采购额', s_unsold: '未卖出 PO', s_ar: '待收款', s_ap: '待付款', s_truck: '卡车费用', s_truck_unpaid: '未付卡车费',
-    sec_basic: '基本信息', sec_goods: '货物 / 价格', sec_cost_po: '额外支出 (算成本)', sec_logistics_po: '提货', sec_logistics_so: '送货 / 自提', sec_history: '修改记录', sec_link: '卖的是哪一拖 (关联 PO)',
+    sec_basic: '基本信息', sec_goods: '货物 / 价格', sec_cost_po: '额外支出 (算成本)', sec_logistics_po: '提货', sec_logistics_so: '送货 / 自提', sec_history: '修改记录', sec_so_pay: '收款信息 (打印 SO 显示)', sec_link: '卖的是哪一拖 (关联 PO)',
     f_supplier: '货源', f_customer: '买家', f_order_date: '订单日期', f_status: '状态', f_title: '货物描述', f_category: '品类', f_load_type: '单位', f_qty: '数量', f_unit_price: '单价', f_discount: '折扣 ($)', f_total: '金额',
     f_extra: '额外支出 ($)', f_extra_notes: '额外支出说明 (人工/装卸…)', f_po: '关联 PO', f_fulfillment: '送货 / 自提', f_pickup_date: '提货日期', f_delivery_date: '送货日期', f_pickup_addr: '提货地址', f_delivery_addr: '送货地址',
     f_truck_cost: '卡车费 (来自卡车订单)', none: '— 无 —', new_party: '+ 新建…', po_remaining: '剩', create_so: '+ 卖出 (建 SO)',
@@ -66,7 +66,7 @@ const I18N = {
     pay_paid: 'Paid', pay_partial: 'Partial', pay_unpaid: 'Unpaid', pay_uninvoiced: 'Not Invoiced', in_checkout: 'In Checkout',
     lt_pallet: 'Pallet', lt_truckload: 'Truckload', lt_box: 'Box', lt_gaylord: 'Gaylord',
     s_revenue: 'Revenue', s_cogs: 'Cost of Sales', s_profit: 'Gross Profit', s_margin: 'Margin', s_purchases: 'Purchases', s_unsold: 'Unsold POs', s_ar: 'Receivable', s_ap: 'Payable', s_truck: 'Truck Cost', s_truck_unpaid: 'Open Truck Orders',
-    sec_basic: 'Basic Info', sec_goods: 'Goods / Price', sec_cost_po: 'Extra Expense (our cost)', sec_logistics_po: 'Pickup', sec_logistics_so: 'Delivery / Pickup', sec_history: 'History', sec_link: 'Which load is this (Linked PO)',
+    sec_basic: 'Basic Info', sec_goods: 'Goods / Price', sec_cost_po: 'Extra Expense (our cost)', sec_logistics_po: 'Pickup', sec_logistics_so: 'Delivery / Pickup', sec_history: 'History', sec_so_pay: 'Payment Info (printed on SO)', sec_link: 'Which load is this (Linked PO)',
     f_supplier: 'Supplier', f_customer: 'Customer', f_order_date: 'Order Date', f_status: 'Status', f_title: 'Description', f_category: 'Category', f_load_type: 'Unit', f_qty: 'Quantity', f_unit_price: 'Unit Price', f_discount: 'Discount ($)', f_total: 'Amount',
     f_extra: 'Extra Expense ($)', f_extra_notes: 'Extra expense notes (labor, handling…)', f_po: 'Linked PO', f_fulfillment: 'Delivery / Pickup', f_pickup_date: 'Pickup Date', f_delivery_date: 'Delivery Date', f_pickup_addr: 'Pickup Address', f_delivery_addr: 'Delivery Address',
     f_truck_cost: 'Truck cost (from truck orders)', none: '— None —', new_party: '+ New…', po_remaining: 'left', create_so: '+ Sell (create SO)',
@@ -432,13 +432,14 @@ async function openOrderModal(id, type, preset) {
       ${field(isSO ? t('f_delivery_date') : t('f_pickup_date'), inp('o-sched_date', o.sched_date, 'date'))}
       ${field(isSO ? t('f_delivery_addr') : t('f_pickup_addr'), `<div style="display:flex;gap:6px">${inp('o-address', o.address, 'text', `oninput="addrResetInline('o-addr-status')"`)}<button class="btn btn-grn btn-sm" type="button" onclick="addrVerifyInline('o-address','o-addr-status')">${t('verify')}</button></div><div id="o-addr-status"></div>`)}
     </div>
+    ${isSO ? `<div class="modal-section">${t('sec_so_pay')}</div><div id="o-pay">${soPayBox(soSellerKey(o), o.seller_key)}</div>` : ''}
     <div class="profit-box" id="o-preview"></div>
     <div class="modal-row">${field(t('notes'), `<textarea class="modal-input" id="o-notes">${esc(o.notes || '')}</textarea>`, true)}</div>
     ${hist ? `<div class="modal-section">${t('sec_history')}</div><div style="max-height:140px;overflow:auto">${hist}</div>` : ''}
     <div class="modal-actions">
       ${id && currentUser.role === 'admin' ? `<button class="btn-del" onclick="deleteOrder(${id})">${t('delete')}</button>` : ''}
       ${id && !isSO && o.status !== 'cancelled' ? `<button class="btn btn-grn" onclick="sellFromPO(${id})">${t('create_so')}</button>` : ''}
-      ${id ? `<button class="btn btn-out" onclick="printOrders([${id}])">${t(isSO ? 'print_so' : 'print_po')}</button>` : ''}
+      ${id ? `<button class="btn btn-out" onclick="printOrders([${id}], $('o-seller_key') && $('o-seller_key').value)">${t(isSO ? 'print_so' : 'print_po')}</button>` : ''}
       ${id ? (o.invoice_id ? `<button class="btn btn-out" onclick="printInvoice(${o.invoice_id})">${t('print_inv')}</button>`
         : o.status !== 'cancelled' ? `<button class="btn btn-out" onclick="invoiceOrder(${id})">${t('make_invoice')}</button>` : '') : ''}
       <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button>
@@ -489,7 +490,7 @@ function orderForm() {
   const o = {}; ['order_date', 'status', 'title', 'category', 'load_type', 'quantity', 'unit_price', 'discount', 'extra_expense', 'extra_expense_notes', 'sched_date', 'address', 'notes']
     .forEach(k => o[k] = $('o-' + k).value);
   o.order_type = $('o-type').value;
-  if (o.order_type === 'sales') { o.customer_id = $('o-customer_id').value; o.po_id = $('o-po_id').value; o.fulfillment = $('o-fulfillment').value; }
+  if (o.order_type === 'sales') { o.customer_id = $('o-customer_id').value; o.po_id = $('o-po_id').value; o.fulfillment = $('o-fulfillment').value; o.seller_key = $('o-seller_key').value; }
   else o.supplier_id = $('o-supplier_id').value;
   if (o.customer_id === '__new') o.customer_id = ''; if (o.supplier_id === '__new') o.supplier_id = '';
   o.address_verified = !!$('o-addr-status').dataset.verified;
@@ -610,6 +611,19 @@ async function deleteInvoice(id) {
 // 每张发票点「打印」都先打开预览: 上面选抬头公司 / 编辑公司信息和付款方式, 下面实时预览, 再 Print / PDF。
 // 抬头只改当前这张发票; 公司信息 / 付款方式 / 条款 / 页脚为全局设置 (应用到所有发票)
 const invSeller = (i, set = INV_SET) => (set.companies || []).find(c => c.key === i.seller_key) || (set.companies || []).find(c => c.key === set.default_company) || (set.companies || [])[0] || CONFIG.company || {};
+// SO 的收款信息: 自己选的公司 > 发票选的公司 > 默认公司; 付款方式内容和发票共用 (全局设置)
+const soSellerKey = o => invSeller({ seller_key: o.seller_key || o.invoice_seller_key }).key || '';
+function soPayBox(key, picked) { // picked: 手动选过才存, 否则跟发票/默认公司
+  const cos = INV_SET.companies || [], co = invSeller({ seller_key: key }), pays = (co.pays || []).filter(x => x.show && x.label);
+  return `<input type="hidden" id="o-seller_key" value="${picked ? esc(co.key || '') : ''}"/>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${cos.map(c => `<label style="flex:1;min-width:180px;display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border:2px solid ${c.key === co.key ? '#F79009' : 'var(--g200)'};border-radius:8px;background:#fff;cursor:pointer">
+      <input type="radio" name="o-seller" ${c.key === co.key ? 'checked' : ''} onchange="$('o-pay').innerHTML=soPayBox('${esc(c.key)}', 1)" style="margin-top:3px"/>
+      <div><b style="color:#8B6914;font-size:12px">${esc(c.name || '—')}</b><div style="font-size:10px;color:var(--g500)">${esc([c.address, c.phone, c.email].filter(Boolean).join(' · '))}</div></div></label>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:8px">${pays.length ? pays.map(x =>
+      `<div style="border:1px solid var(--g200);border-radius:8px;padding:7px 10px;font-size:11px;line-height:1.5;background:var(--g50)"><b>${esc(x.label)}</b>${[x.l1, x.l2, x.l3].filter(Boolean).map(l => '<br>' + esc(l)).join('')}</div>`).join('')
+      : `<div style="font-size:11px;color:var(--g500)">${zh('这个公司还没有勾「显示」的付款方式', 'No payment methods enabled for this company')}</div>`}</div>
+    <div style="font-size:10px;color:var(--g500);margin-top:4px">${zh('付款方式内容为全局设置, 在发票「🧾 抬头 / 付款方式」里编辑', 'Payment method details are global — edit them in an invoice\'s Header / Payment preview')}</div>`;
+}
 let IC = null; // 预览草稿 { id, set, seller_key, hide }
 const zh = (a, b) => LANG === 'zh' ? a : b;
 function invCustomPanel() {
@@ -736,6 +750,7 @@ function docHtml(title, pages, preview) {
 const partyLines = (p, bill) => [p.name, p.contact ? 'Attn: ' + p.contact : '', (bill ? (p.bill_same !== '1' && fmtAddr(p, true)) || fmtAddr(p) : fmtAddr(p)), [p.phone, p.email].filter(Boolean).join(' · ')];
 function orderDocPage(o) {
   const isSO = o.order_type === 'sales';
+  const seller = isSO ? invSeller({ seller_key: soSellerKey(o) }) : null;
   const party = (isSO ? CUSTOMERS.find(p => p.id === o.customer_id) : SUPPLIERS.find(p => p.id === o.supplier_id)) || { name: o.customer_name || o.supplier_name || '' };
   const pickup = isSO && o.fulfillment === 'pickup';
   // 自提 SO: 提货地点 = 关联 PO 的提货地址 (没填就用那个货源的地址)
@@ -749,11 +764,13 @@ function orderDocPage(o) {
       ? [{ label: 'Bill To', lines: partyLines(party, true) }, pickup ? { label: 'Pickup Location (Customer Pickup)', lines: [pickupAddr || '—'] } : { label: 'Ship To', lines: [party.name, o.address || fmtAddr(party)] }]
       : [{ label: 'Vendor', lines: partyLines(party, true) }, { label: 'Pickup Location', lines: [party.name, o.address || fmtAddr(party)] }],
     lines: [o], totals: [['Total', o.total, 'tot']], notes: o.notes,
+    // SO: 抬头 + 收款信息跟选的公司 (和发票同一套付款方式)
+    ...(seller ? { co: seller, pays: (seller.pays || []).filter(x => x.show && x.label) } : {}),
     sign: isSO ? ['Authorized Signature', 'Customer Signature / Date'] : ['Authorized Signature', 'Vendor Signature / Date'],
   };
 }
-function printOrders(ids) {
-  const list = ids.map(id => ORDERS.find(o => o.id === id)).filter(Boolean);
+function printOrders(ids, sellerKey) {
+  const list = ids.map(id => ORDERS.find(o => o.id === id)).filter(Boolean).map(o => sellerKey ? { ...o, seller_key: sellerKey } : o);
   if (!list.length) return toast(t('select_first'), 'error');
   docWindow(list.length === 1 ? list[0].order_no : `${list[0].order_type === 'sales' ? 'SO' : 'PO'} x${list.length}`, list.map(orderDocPage));
 }

@@ -299,6 +299,8 @@ try { db.exec('ALTER TABLE truck_bills ADD COLUMN size TEXT'); } catch (e) {}
 // 发票抬头 (卖方公司) 每张发票自己选; 不显示抬头的发票打印时不出公司信息
 try { db.exec('ALTER TABLE invoices ADD COLUMN seller_key TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE invoices ADD COLUMN hide_header INTEGER DEFAULT 0'); } catch (e) {}
+// SO 打印的收款信息跟哪个公司 (空 = 跟发票 / 默认公司)
+try { db.exec('ALTER TABLE orders ADD COLUMN seller_key TEXT'); } catch (e) {}
 db.exec('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)');
 
 // ---------- 发票自定义 (全局): 抬头公司 + 按公司分组的付款方式 + 条款 / 页脚, 照 pallet.bintique.com ----------
@@ -404,7 +406,7 @@ function nextNo(table, col, prefix) {
 const ORDER_STATUSES = ['draft', 'confirmed', 'in_transit', 'picked_up', 'delivered', 'completed', 'cancelled'];
 function loadOrders(where = '', params = []) {
   const rows = db.prepare(`SELECT o.*, s.name AS supplier_name, c.name AS customer_name,
-      i.invoice_no, i.total AS invoice_total, i.paid_amount AS invoice_paid, g.group_code AS checkout_code,
+      i.invoice_no, i.seller_key AS invoice_seller_key, i.total AS invoice_total, i.paid_amount AS invoice_paid, g.group_code AS checkout_code,
       (SELECT COALESCE(SUM(b.amount * 1.0 / (SELECT COUNT(*) FROM truck_bill_orders x WHERE x.bill_id = b.id)), 0)
          FROM truck_bill_orders bo JOIN truck_bills b ON b.id = bo.bill_id WHERE bo.order_id = o.id) AS truck_cost,
       (SELECT GROUP_CONCAT(b.bill_no, ', ') FROM truck_bill_orders bo JOIN truck_bills b ON b.id = bo.bill_id WHERE bo.order_id = o.id) AS truck_bill_nos
@@ -456,6 +458,7 @@ function orderValues(b, type) {
     fulfillment: ['pickup', 'delivery'].includes(b.fulfillment) ? b.fulfillment : null,
     sched_date: str(b.sched_date), address: str(b.address), address_verified: str(b.address) ? (b.address_verified ? '1' : '0') : null,
     status: ORDER_STATUSES.includes(b.status) ? b.status : 'confirmed', notes: str(b.notes),
+    seller_key: type === 'sales' ? str(b.seller_key) : null,
   };
 }
 
