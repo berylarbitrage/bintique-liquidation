@@ -301,6 +301,7 @@ try { db.exec('ALTER TABLE invoices ADD COLUMN seller_key TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE invoices ADD COLUMN hide_header INTEGER DEFAULT 0'); } catch (e) {}
 // SO 打印的收款信息跟哪个公司 (空 = 跟发票 / 默认公司)
 try { db.exec('ALTER TABLE orders ADD COLUMN seller_key TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE orders ADD COLUMN hide_header INTEGER DEFAULT 0'); } catch (e) {}
 db.exec('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)');
 
 // ---------- 发票自定义 (全局): 抬头公司 + 按公司分组的付款方式 + 条款 / 页脚, 照 pallet.bintique.com ----------
@@ -459,6 +460,7 @@ function orderValues(b, type) {
     sched_date: str(b.sched_date), address: str(b.address), address_verified: str(b.address) ? (b.address_verified ? '1' : '0') : null,
     status: ORDER_STATUSES.includes(b.status) ? b.status : 'confirmed', notes: str(b.notes),
     seller_key: type === 'sales' ? str(b.seller_key) : null,
+    hide_header: type === 'sales' && b.hide_header ? 1 : 0,
   };
 }
 

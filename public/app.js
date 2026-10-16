@@ -439,7 +439,7 @@ async function openOrderModal(id, type, preset) {
     <div class="modal-actions">
       ${id && currentUser.role === 'admin' ? `<button class="btn-del" onclick="deleteOrder(${id})">${t('delete')}</button>` : ''}
       ${id && !isSO && o.status !== 'cancelled' ? `<button class="btn btn-grn" onclick="sellFromPO(${id})">${t('create_so')}</button>` : ''}
-      ${id ? `<button class="btn btn-out" onclick="printOrders([${id}], SP && SP.key, SP && SP.set)">${t(isSO ? 'print_so' : 'print_po')}</button>` : ''}
+      ${id ? `<button class="btn btn-out" onclick="printOrders([${id}], SP && SP.key, SP && SP.set, SP && SP.hide)">${t(isSO ? 'print_so' : 'print_po')}</button>` : ''}
       ${id ? (o.invoice_id ? `<button class="btn btn-out" onclick="printInvoice(${o.invoice_id})">${t('print_inv')}</button>`
         : o.status !== 'cancelled' ? `<button class="btn btn-out" onclick="invoiceOrder(${id})">${t('make_invoice')}</button>` : '') : ''}
       <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button>
@@ -491,7 +491,7 @@ function orderForm() {
   const o = {}; ['order_date', 'status', 'title', 'category', 'load_type', 'quantity', 'unit_price', 'discount', 'extra_expense', 'extra_expense_notes', 'sched_date', 'address', 'notes']
     .forEach(k => o[k] = $('o-' + k).value);
   o.order_type = $('o-type').value;
-  if (o.order_type === 'sales') { o.customer_id = $('o-customer_id').value; o.po_id = $('o-po_id').value; o.fulfillment = $('o-fulfillment').value; o.seller_key = $('o-seller_key').value; }
+  if (o.order_type === 'sales') { o.customer_id = $('o-customer_id').value; o.po_id = $('o-po_id').value; o.fulfillment = $('o-fulfillment').value; o.seller_key = $('o-seller_key').value; o.hide_header = $('o-hide_header').checked; }
   else o.supplier_id = $('o-supplier_id').value;
   if (o.customer_id === '__new') o.customer_id = ''; if (o.supplier_id === '__new') o.supplier_id = '';
   o.address_verified = !!$('o-addr-status').dataset.verified;
@@ -618,7 +618,7 @@ const soSellerKey = o => invSeller({ seller_key: o.seller_key || o.invoice_selle
 // SP: 编辑 SO 时的收款信息草稿 { set: 抬头/付款方式 (全局, 和发票共用), key: 选的抬头, picked: 手动选过才存, dirty: 改过设置要保存 }
 let SP = null;
 function soPayInit(o) {
-  SP = { set: JSON.parse(JSON.stringify(INV_SET)), key: soSellerKey(o), picked: !!o.seller_key, dirty: false };
+  SP = { set: JSON.parse(JSON.stringify(INV_SET)), key: soSellerKey(o), picked: !!o.seller_key, hide: !!+o.hide_header, dirty: false };
   return soPayBox();
 }
 function soPayBox() {
@@ -630,6 +630,7 @@ function soPayBox() {
       <input type="radio" name="o-seller" value="${esc(c.key)}" ${c.key === co.key ? 'checked' : ''} style="margin-top:3px"/>
       <div><b style="color:#8B6914;font-size:12px">${esc(c.name || '—')}</b><div style="${sm}">${esc([c.address, c.phone, c.email].filter(Boolean).join(' · '))}</div></div></label>`).join('')}
       <button type="button" class="btn btn-out btn-sm" style="align-self:center" onclick="spAddCompany()">${zh('+ 添加抬头', '+ Header')}</button></div>
+    <label style="display:flex;gap:6px;align-items:center;font-size:11px;margin-top:6px"><input type="checkbox" id="o-hide_header" ${SP.hide ? 'checked' : ''}/> ${zh('空白抬头（打印 SO 不显示公司名/地址，收款方式照常显示）', 'Blank header (no company name/address on the printed SO; payment methods still print)')}</label>
     ${ci < 0 ? '' : `<div style="border:1px solid #F79009;border-radius:8px;padding:8px;margin-top:8px;background:#FFFBEB">
       <div style="display:grid;grid-template-columns:2fr 3fr 1.3fr 2fr;gap:6px">${cin('name', co.name, zh('公司名称', 'Company name'), 'font-weight:700')}${cin('address', co.address, zh('地址', 'Address'))}${cin('phone', co.phone, zh('电话', 'Phone'))}${cin('email', co.email, 'Email')}</div>
       <div style="${sm};margin-top:8px">${zh('这个抬头的收款方式 — 勾「显示」的才打印', 'Payment methods for this header — only checked ones print')}</div>
@@ -647,6 +648,7 @@ function spBind() {
   w.oninput = w.onchange = e => {
     const el = e.target;
     if (el.name === 'o-seller') { if (e.type === 'change') { SP.key = el.value; SP.picked = true; spRepaint(); } return; }
+    if (el.id === 'o-hide_header') { SP.hide = el.checked; return; }
     if (!el.dataset.sp) return;
     const ks = el.dataset.sp.split('.'); let o = spCo();
     ks.slice(0, -1).forEach(k => o = o[k]);
@@ -805,12 +807,12 @@ function orderDocPage(o, set = INV_SET) {
       : [{ label: 'Vendor', lines: partyLines(party, true) }, { label: 'Pickup Location', lines: [party.name, o.address || fmtAddr(party)] }],
     lines: [o], totals: [['Total', o.total, 'tot']], notes: o.notes,
     // SO: 抬头 + 收款信息跟选的公司 (和发票同一套付款方式)
-    ...(seller ? { co: seller, pays: (seller.pays || []).filter(x => x.show && x.label) } : {}),
+    ...(seller ? { co: seller, noHeader: !!+o.hide_header, pays: (seller.pays || []).filter(x => x.show && x.label) } : {}),
     sign: isSO ? ['Authorized Signature', 'Customer Signature / Date'] : ['Authorized Signature', 'Vendor Signature / Date'],
   };
 }
-function printOrders(ids, sellerKey, set) {
-  const list = ids.map(id => ORDERS.find(o => o.id === id)).filter(Boolean).map(o => sellerKey ? { ...o, seller_key: sellerKey } : o);
+function printOrders(ids, sellerKey, set, hide) {
+  const list = ids.map(id => ORDERS.find(o => o.id === id)).filter(Boolean).map(o => sellerKey ? { ...o, seller_key: sellerKey, hide_header: hide ? 1 : 0 } : o);
   if (!list.length) return toast(t('select_first'), 'error');
   docWindow(list.length === 1 ? list[0].order_no : `${list[0].order_type === 'sales' ? 'SO' : 'PO'} x${list.length}`, list.map(o => orderDocPage(o, set)));
 }
