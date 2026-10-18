@@ -369,7 +369,8 @@ function selectAllOrders(type, on) { SEL[type].clear(); if (on) orderRows(type).
 async function moveToCheckout(type) {
   const ids = [...SEL[type]];
   if (!ids.length) return toast(t('select_first'), 'error');
-  if (!confirm(LANG === 'zh' ? `将 ${ids.length} 个订单移到待结账?` : `Move ${ids.length} orders to pending checkout?`)) return;
+  if (!(await uiConfirm(LANG === 'zh' ? `将 ${ids.length} 个订单移到待结账?` : `Move ${ids.length} orders to pending checkout?`,
+    { okText: zh('移到待结账', 'Move to checkout') }))) return;
   try { const g = await api('/api/checkout-groups', { method: 'POST', body: { order_ids: ids } }); SEL[type].clear(); toast('✓ ' + g.group_code); await refreshAll(); switchTab('checkout'); }
   catch (e) { toast(e.message, 'error'); }
 }
@@ -535,7 +536,7 @@ async function saveOrder(id) {
   btn.disabled = false;
 }
 async function deleteOrder(id) {
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await uiConfirm(t('confirm_delete'), { danger: true }))) return;
   try { await api('/api/orders/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -606,7 +607,7 @@ async function saveInvoice(id) {
   btn.disabled = false;
 }
 async function deleteInvoice(id) {
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await uiConfirm(t('confirm_delete'), { danger: true }))) return;
   try { await api('/api/invoices/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
 // ---------- 发票自定义 + 预览 (照 pallet.bintique.com) ----------
@@ -659,8 +660,8 @@ function spBind() {
 }
 function spAddPay() { const c = spCo(); (c.pays = c.pays || []).push({ show: true, label: '', l1: '', l2: '', l3: '' }); SP.dirty = true; spRepaint(); }
 function spDelPay(pi) { spCo().pays.splice(pi, 1); SP.dirty = true; spRepaint(); }
-function spAddCompany() {
-  const name = prompt(zh('抬头公司名称', 'Header company name')); if (!name || !name.trim()) return;
+async function spAddCompany() {
+  const name = await uiPrompt(zh('添加公司', 'Add company'), { placeholder: zh('抬头公司名称', 'Header company name'), okText: zh('添加', 'Add') }); if (!name) return;
   const key = 'co' + Date.now().toString(36);
   SP.set.companies.push({ key, name: name.trim(), address: '', phone: '', email: '',
     pays: ['Zelle', 'ACH / Direct Deposit', 'Wire Transfer'].map(label => ({ show: false, label, l1: '', l2: '', l3: '' })) });
@@ -726,8 +727,8 @@ function icBind() {
 function icRepaint() { const y = $('modal-box').scrollTop; $('ic-wrap').innerHTML = invCustomPanel(); $('modal-box').scrollTop = y; icRender(); }
 function icToggle() { const w = $('ic-wrap'); w.style.display = w.style.display === 'none' ? '' : 'none'; }
 function icAddPay(ci) { IC.set.companies[ci].pays.push({ show: true, label: '', l1: '', l2: '', l3: '' }); icRepaint(); }
-function icAddCompany() {
-  const name = prompt(zh('公司名称', 'Company name')); if (!name || !name.trim()) return;
+async function icAddCompany() {
+  const name = await uiPrompt(zh('添加公司', 'Add company'), { placeholder: zh('公司名称', 'Company name'), okText: zh('添加', 'Add') }); if (!name) return;
   IC.set.companies.push({ key: 'co' + Date.now().toString(36), name: name.trim(), address: '', phone: '', email: '',
     pays: ['Zelle', 'ACH / Direct Deposit', 'Wire Transfer'].map(label => ({ show: false, label, l1: '', l2: '', l3: '' })) });
   icRepaint();
@@ -888,7 +889,7 @@ async function invoiceGroup(id) {
   } catch (e) { toast(e.message, 'error'); }
 }
 async function deleteGroup(id) {
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await uiConfirm(t('confirm_delete'), { danger: true }))) return;
   try { await api('/api/checkout-groups/' + id, { method: 'DELETE' }); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
 async function removeFromGroup(gid, oid) {
@@ -970,7 +971,57 @@ function openModal(title, html, width = 720) {
   $('modal').classList.add('open');
 }
 function closeModal() { $('modal').classList.remove('open'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  // 小对话框开着时 Esc 只关它, 不连带关掉下面的大弹窗
+  if (UI_DLG.done) return UI_DLG.done(null);
+  closeModal();
+});
+
+// ---------- 小对话框: 代替浏览器自带的 prompt / confirm ----------
+// 浏览器那个灰框跟网站风格不搭, 还会显示「liquidation.bintique.com says」。
+// 用网站自己的 .modal 样式, 叠在已打开的大弹窗上面; 返回 Promise, 调用处 await 即可。
+const UI_DLG = { done: null };
+function uiDialog({ title, message = '', input = false, value = '', placeholder = '', okText, danger = false }) {
+  if (UI_DLG.done) UI_DLG.done(null);   // 上一个还开着就先当取消
+  let el = $('ui-dialog');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'ui-dialog';
+    el.className = 'modal-overlay ui-dialog';
+    el.addEventListener('click', e => { if (e.target === el && UI_DLG.done) UI_DLG.done(null); });
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<div class="modal">
+    <div class="modal-head"><h3>${esc(title)}</h3><button class="modal-close" data-act="cancel">&times;</button></div>
+    <div class="modal-body">
+      ${message ? `<div class="ui-dialog-msg">${esc(message)}</div>` : ''}
+      ${input ? `<input class="modal-input ui-dialog-input" value="${esc(value)}" placeholder="${esc(placeholder)}"/>` : ''}
+      <div class="modal-actions">
+        <button class="btn-cancel" data-act="cancel">${esc(t('cancel'))}</button>
+        <button class="btn-save${danger ? ' btn-save-danger' : ''}" data-act="ok">${esc(okText || (danger ? t('delete') : 'OK'))}</button>
+      </div>
+    </div></div>`;
+  const field = el.querySelector('.ui-dialog-input');
+  return new Promise(resolve => {
+    UI_DLG.done = v => { UI_DLG.done = null; el.classList.remove('open'); resolve(v); };
+    el.querySelectorAll('[data-act]').forEach(b => b.onclick = () =>
+      UI_DLG.done && UI_DLG.done(b.dataset.act === 'ok' ? (input ? field.value : true) : null));
+    if (field) field.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); UI_DLG.done && UI_DLG.done(field.value); } };
+    el.classList.add('open');
+    // 删除类的默认停在「取消」上, 手滑按 Enter 不会删掉东西
+    (field || el.querySelector(danger ? '.btn-cancel' : '[data-act="ok"]')).focus();
+  });
+}
+// 输入一行文字; 取消返回 null, 确定返回去掉首尾空格后的文字
+async function uiPrompt(title, opts = {}) {
+  const v = await uiDialog({ ...opts, title, input: true });
+  return v == null ? null : String(v).trim();
+}
+// 确认; danger=true 时确定按钮是红色的「删除」
+async function uiConfirm(message, opts = {}) {
+  return (await uiDialog({ title: opts.title || (opts.danger ? t('delete') : zh('请确认', 'Please confirm')), message, ...opts })) === true;
+}
 
 const field = (label, inner, full) => `<div class="modal-field${full ? ' full' : ''}"><span class="modal-label">${esc(label)}</span>${inner}</div>`;
 const inp = (id, val, type = 'text', extra = '') => `<input class="modal-input" id="${id}" type="${type}" value="${esc(val ?? '')}" ${type === 'number' ? 'step="0.01" min="0"' : ''} ${extra}/>`;
@@ -980,7 +1031,8 @@ const partySelect = (id, list, val, kind) => `<select class="modal-input" id="${
 
 
 async function quickAddParty(kind, selId) {
-  const name = prompt(kind === 'suppliers' ? t('add_supplier').replace('+ ', '') : t('add_customer').replace('+ ', ''));
+  const label = kind === 'suppliers' ? t('add_supplier').replace('+ ', '') : t('add_customer').replace('+ ', '');
+  const name = await uiPrompt(label, { placeholder: t('name'), okText: zh('添加', 'Add') });
   const sel = $(selId);
   if (!name || !name.trim()) { sel.value = ''; return; }
   try {
@@ -1118,7 +1170,7 @@ async function saveParty(kind, id) {
   catch (e) { toast(e.message, 'error'); }
 }
 async function deleteParty(kind, id) {
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await uiConfirm(t('confirm_delete'), { danger: true }))) return;
   try { await api(`/api/${kind}/${id}`, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -1246,7 +1298,7 @@ async function saveTruckBill(id) {
   btn.disabled = false;
 }
 async function delTruckReceipt(id, file) {
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await uiConfirm(t('confirm_delete'), { danger: true }))) return;
   try {
     const b = await api(`/api/truck-bills/${id}/receipts/${encodeURIComponent(file)}`, { method: 'DELETE' });
     const i = TRUCKS.findIndex(x => x.id === id); if (i >= 0) TRUCKS[i] = b;
@@ -1254,7 +1306,7 @@ async function delTruckReceipt(id, file) {
   } catch (e) { toast(e.message, 'error'); }
 }
 async function deleteTruckBill(id) {
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await uiConfirm(t('confirm_delete'), { danger: true }))) return;
   try { await api('/api/truck-bills/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
 function exportTruckBills() {
@@ -1296,7 +1348,7 @@ async function saveQuote(id) {
   catch (e) { toast(e.message, 'error'); }
 }
 async function deleteQuote(id) {
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await uiConfirm(t('confirm_delete'), { danger: true }))) return;
   try { await api('/api/truck-quotes/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -1340,7 +1392,7 @@ async function saveUser(id) {
   catch (e) { toast(e.message, 'error'); }
 }
 async function deleteUser(id) {
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await uiConfirm(t('confirm_delete'), { danger: true }))) return;
   try { await api('/api/users/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); loadUsers(); } catch (e) { toast(e.message, 'error'); }
 }
 

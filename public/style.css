@@ -189,6 +189,17 @@ textarea.modal-input{resize:vertical;min-height:60px;width:100%;box-sizing:borde
 .btn-save:hover{background:var(--pri-d)}
 .btn-del{padding:7px 14px;border-radius:7px;font-size:11px;font-weight:600;border:1px solid #fee2e2;background:var(--wh);color:var(--red);margin-right:auto;cursor:pointer}
 .btn-del:hover{background:#fee2e2}
+/* 小对话框 (代替浏览器 prompt / confirm): 叠在大弹窗上面, 宽度小一号 */
+.ui-dialog{z-index:1100}
+.ui-dialog .modal{width:400px;max-width:92vw}
+.ui-dialog .modal-body{padding:18px 20px 16px}
+.ui-dialog-msg{font-size:12px;color:var(--g700);line-height:1.6;white-space:pre-line}
+.ui-dialog-input{font-size:13px;padding:9px 11px}
+.ui-dialog-input:focus{box-shadow:0 0 0 3px var(--pri-l)}
+.ui-dialog .modal-actions{margin-top:14px;padding-top:12px}
+.ui-dialog button:focus{outline:none}
+.ui-dialog .btn-save:focus-visible,.ui-dialog .btn-cancel:focus-visible{box-shadow:0 0 0 3px var(--pri-100)}
+.btn-save-danger{background:var(--red);box-shadow:0 2px 8px rgba(240,68,56,.2)}.btn-save-danger:hover{background:#d92d20}
 
 /* TOAST NOTIFICATIONS */
 .toast-container{position:fixed;top:16px;right:16px;z-index:20000;display:flex;flex-direction:column;gap:8px}
@@ -346,3 +357,4 @@ tfoot td{font-weight:700;background:var(--g50);position:sticky;bottom:0;border-t
 .badge-pay-partial{background:#FFFAEB;color:#B54708}
 .badge-pay-unpaid{background:#FEF3F2;color:#B42318}
 .badge-pay-uninvoiced{background:var(--g100);color:var(--g500)}
+@media(max-width:768px){.ui-dialog{align-items:center}.ui-dialog .modal{width:92vw;max-height:none;border-radius:12px}}
