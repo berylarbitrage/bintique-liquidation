@@ -16,14 +16,18 @@ export default function ContactPage() {
       <div className="grid gap-12 md:grid-cols-[1fr_2fr]">
         <div className="space-y-4">
           <p className="flex items-center gap-3">
-            <Mail className="size-5 text-primary" aria-hidden />
-            <a href={`mailto:${SITE.contactEmail}`} className="underline">{SITE.contactEmail}</a>
+            <Mail className="text-primary size-5" aria-hidden />
+            <a href={`mailto:${SITE.contactEmail}`} className="underline">
+              {SITE.contactEmail}
+            </a>
           </p>
           <p className="flex items-center gap-3">
-            <Phone className="size-5 text-primary" aria-hidden />
-            <a href={`tel:${SITE.contactPhone.replace(/\D/g, "")}`} className="underline">{SITE.contactPhone}</a>
+            <Phone className="text-primary size-5" aria-hidden />
+            <a href={`tel:${SITE.contactPhone.replace(/\D/g, "")}`} className="underline">
+              {SITE.contactPhone}
+            </a>
           </p>
-          <p className="text-sm text-muted">Serving donors in {serviceStatesText}.</p>
+          <p className="text-muted text-sm">Serving donors in {serviceStatesText}.</p>
         </div>
         <ContactForm />
       </div>

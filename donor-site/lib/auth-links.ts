@@ -38,6 +38,7 @@ export async function createMagicLink(email: string, next = "/portal"): Promise<
 
 /** Only allow same-site relative redirects. */
 export function safeNext(next: string | null | undefined, fallback = "/portal"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\"))
+    return fallback;
   return next;
 }

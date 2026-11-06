@@ -10,7 +10,7 @@ export function DefList({ items }: { items: [string, unknown][] }) {
     <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
       {items.map(([k, v]) => (
         <div key={k}>
-          <dt className="text-xs font-semibold tracking-wide text-muted uppercase">{k}</dt>
+          <dt className="text-muted text-xs font-semibold tracking-wide uppercase">{k}</dt>
           <dd className="mt-0.5 whitespace-pre-wrap">{formatValue(v)}</dd>
         </div>
       ))}

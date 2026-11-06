@@ -32,7 +32,9 @@ export async function POST(req: Request) {
   if (website) return json({ ok: true, eligible: false });
 
   if (!(await verifyTurnstile(turnstileToken, clientIp(req.headers)))) {
-    return errorJson("Verification failed. Please refresh and try again.", 400, { code: "turnstile" });
+    return errorJson("Verification failed. Please refresh and try again.", 400, {
+      code: "turnstile",
+    });
   }
 
   // Same zod schema as the client.
@@ -150,7 +152,10 @@ export async function POST(req: Request) {
         await sendEmail({
           to: email,
           subject: `Thank you for applying to ${SITE.brand}`,
-          react: createElement(IneligibleEmail, { firstName: d.firstName, referUrl: siteUrl("/refer") }),
+          react: createElement(IneligibleEmail, {
+            firstName: d.firstName,
+            referUrl: siteUrl("/refer"),
+          }),
         });
       }
       const adminTo = env("ADMIN_NOTIFY_EMAIL");

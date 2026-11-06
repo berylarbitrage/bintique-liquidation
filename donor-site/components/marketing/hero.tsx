@@ -18,9 +18,9 @@ export function Hero({
   return (
     <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pt-10 pb-12 md:grid-cols-2 md:pt-16 md:pb-20">
       <div>
-        {eyebrow && <p className="mb-3 text-sm font-semibold text-primary">{eyebrow}</p>}
+        {eyebrow && <p className="text-primary mb-3 text-sm font-semibold">{eyebrow}</p>}
         <h1 className="text-4xl leading-tight font-semibold md:text-5xl lg:text-6xl">{title}</h1>
-        <p className="mt-5 text-lg text-muted md:text-xl">{subtitle}</p>
+        <p className="text-muted mt-5 text-lg md:text-xl">{subtitle}</p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">{children}</div>
       </div>
       <Image

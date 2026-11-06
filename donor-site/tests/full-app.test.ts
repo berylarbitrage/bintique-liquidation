@@ -13,12 +13,16 @@ describe("full application sections", () => {
 
   it("strict mode enforces required fields; draft mode does not", () => {
     expect(sectionSchema("background", "egg", true).safeParse({}).success).toBe(false);
-    expect(sectionSchema("background", "egg", false).safeParse({ occupation: "Nurse" }).success).toBe(true);
+    expect(
+      sectionSchema("background", "egg", false).safeParse({ occupation: "Nurse" }).success,
+    ).toBe(true);
   });
 
   it("rejects unknown keys and wrong option values", () => {
     expect(sectionSchema("appearance", "egg", false).safeParse({ evil: 1 }).success).toBe(false);
-    expect(sectionSchema("appearance", "egg", false).safeParse({ eyeColor: "Purple" }).success).toBe(false);
+    expect(
+      sectionSchema("appearance", "egg", false).safeParse({ eyeColor: "Purple" }).success,
+    ).toBe(false);
   });
 
   it("validates multi-select and numbers", () => {
@@ -40,6 +44,16 @@ describe("full application sections", () => {
   it("computes completion percent over 7 sections", () => {
     expect(completionPercent([])).toBe(0);
     expect(completionPercent(["background"])).toBe(14);
-    expect(completionPercent(["background", "appearance", "medical", "family", "reproductive", "photos", "signature"])).toBe(100);
+    expect(
+      completionPercent([
+        "background",
+        "appearance",
+        "medical",
+        "family",
+        "reproductive",
+        "photos",
+        "signature",
+      ]),
+    ).toBe(100);
   });
 });

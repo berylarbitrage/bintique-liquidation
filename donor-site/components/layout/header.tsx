@@ -15,7 +15,7 @@ export function Header() {
   const applyHref = pathname.startsWith("/sperm") ? "/apply/sperm" : "/apply/egg";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
+    <header className="border-border bg-background/90 sticky top-0 z-40 border-b backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Logo />
         <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
@@ -24,7 +24,7 @@ export function Header() {
               key={l.href}
               href={l.href}
               className={cn(
-                "text-sm font-medium text-foreground/80 hover:text-primary",
+                "text-foreground/80 hover:text-primary text-sm font-medium",
                 pathname === l.href && "text-primary",
               )}
             >
@@ -53,7 +53,7 @@ export function Header() {
         <nav
           id="mobile-nav"
           aria-label="Mobile"
-          className="border-t border-border bg-background px-4 pb-4 lg:hidden"
+          className="border-border bg-background border-t px-4 pb-4 lg:hidden"
         >
           <ul className="flex flex-col">
             {NAV_LINKS.map((l) => (

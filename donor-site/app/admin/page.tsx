@@ -51,9 +51,12 @@ export default async function AdminListPage({
 
   const base = supabase
     .from("applications")
-    .select("id,created_at,first_name,last_name,donor_type,state,date_of_birth,bmi,eligible,status,referral_code", {
-      count: "exact",
-    })
+    .select(
+      "id,created_at,first_name,last_name,donor_type,state,date_of_birth,bmi,eligible,status,referral_code",
+      {
+        count: "exact",
+      },
+    )
     .order("created_at", { ascending: false })
     .range(from, from + PAGE_SIZE - 1);
   type Loose = Filterable<Loose>;
@@ -86,18 +89,18 @@ export default async function AdminListPage({
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <p className="text-sm text-muted">New this week</p>
+          <p className="text-muted text-sm">New this week</p>
           <p className="mt-1 text-3xl font-semibold">{stats?.this_week ?? "–"}</p>
         </Card>
         <Card>
-          <p className="text-sm text-muted">Pre-qualification rate (all time)</p>
+          <p className="text-muted text-sm">Pre-qualification rate (all time)</p>
           <p className="mt-1 text-3xl font-semibold">{stats ? `${rate}%` : "–"}</p>
-          <p className="text-xs text-muted">
+          <p className="text-muted text-xs">
             {stats?.eligible ?? 0} of {stats?.total ?? 0} applicants
           </p>
         </Card>
         <Card>
-          <p className="mb-2 text-sm text-muted">Sources (how they heard)</p>
+          <p className="text-muted mb-2 text-sm">Sources (how they heard)</p>
           <ul className="space-y-1.5">
             {stats?.by_source.map((s) => {
               const pct = sourceTotal ? Math.round((s.count / sourceTotal) * 100) : 0;
@@ -109,8 +112,8 @@ export default async function AdminListPage({
                       {s.count} · {pct}%
                     </span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-muted-bg">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                  <div className="bg-muted-bg h-1.5 rounded-full">
+                    <div className="bg-primary h-full rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </li>
               );
@@ -119,8 +122,17 @@ export default async function AdminListPage({
         </Card>
       </div>
 
-      <form className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-6" method="get">
-        <Input name="q" defaultValue={filters.q} placeholder="Search name or email" aria-label="Search" className="lg:col-span-2" />
+      <form
+        className="border-border bg-card grid gap-3 rounded-2xl border p-4 sm:grid-cols-2 lg:grid-cols-6"
+        method="get"
+      >
+        <Input
+          name="q"
+          defaultValue={filters.q}
+          placeholder="Search name or email"
+          aria-label="Search"
+          className="lg:col-span-2"
+        />
         <NativeSelect name="type" defaultValue={filters.type ?? ""} aria-label="Donor type">
           <option value="">All types</option>
           <option value="egg">Egg</option>
@@ -129,10 +141,16 @@ export default async function AdminListPage({
         <NativeSelect name="status" defaultValue={filters.status ?? ""} aria-label="Status">
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            <option key={s} value={s}>
+              {STATUS_LABELS[s]}
+            </option>
           ))}
         </NativeSelect>
-        <NativeSelect name="eligible" defaultValue={filters.eligible ?? ""} aria-label="Pre-qualified">
+        <NativeSelect
+          name="eligible"
+          defaultValue={filters.eligible ?? ""}
+          aria-label="Pre-qualified"
+        >
           <option value="">Pre-qualified: any</option>
           <option value="yes">Pre-qualified</option>
           <option value="no">Not pre-qualified</option>
@@ -140,11 +158,15 @@ export default async function AdminListPage({
         <NativeSelect name="state" defaultValue={filters.state ?? ""} aria-label="State">
           <option value="">All states</option>
           {US_STATES.map(([c, n]) => (
-            <option key={c} value={c}>{n}</option>
+            <option key={c} value={c}>
+              {n}
+            </option>
           ))}
         </NativeSelect>
         <div className="flex gap-2 sm:col-span-2 lg:col-span-6">
-          <Button type="submit" variant="primary" size="sm">Apply filters</Button>
+          <Button type="submit" variant="primary" size="sm">
+            Apply filters
+          </Button>
           <Button asChild variant="ghost" size="sm">
             <Link href="/admin">Reset</Link>
           </Button>
@@ -156,23 +178,47 @@ export default async function AdminListPage({
         </div>
       </form>
 
-      {error && <p role="alert" className="text-destructive">Could not load applications.</p>}
+      {error && (
+        <p role="alert" className="text-destructive">
+          Could not load applications.
+        </p>
+      )}
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+      <div className="border-border bg-card overflow-x-auto rounded-2xl border">
         <table className="w-full min-w-[900px] text-left text-sm">
-          <thead className="border-b border-border bg-muted-bg text-xs uppercase text-muted">
+          <thead className="border-border bg-muted-bg text-muted border-b text-xs uppercase">
             <tr>
-              {["Submitted", "Name", "Type", "State", "Age", "BMI", "Pre-qualified", "Status", "Referrer"].map((h) => (
-                <th key={h} scope="col" className="px-4 py-3 font-semibold">{h}</th>
+              {[
+                "Submitted",
+                "Name",
+                "Type",
+                "State",
+                "Age",
+                "BMI",
+                "Pre-qualified",
+                "Status",
+                "Referrer",
+              ].map((h) => (
+                <th key={h} scope="col" className="px-4 py-3 font-semibold">
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-border divide-y">
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-muted-bg/50">
-                <td className="px-4 py-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {new Date(r.created_at).toLocaleString("en-US", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </td>
                 <td className="px-4 py-3">
-                  <Link href={`/admin/applications/${r.id}`} className="font-medium text-primary underline">
+                  <Link
+                    href={`/admin/applications/${r.id}`}
+                    className="text-primary font-medium underline"
+                  >
                     {r.first_name} {r.last_name}
                   </Link>
                 </td>
@@ -183,13 +229,19 @@ export default async function AdminListPage({
                 <td className="px-4 py-3">
                   {r.eligible ? <Badge tone="success">Yes</Badge> : <Badge tone="danger">No</Badge>}
                 </td>
-                <td className="px-4 py-3"><Badge>{STATUS_LABELS[r.status] ?? r.status}</Badge></td>
-                <td className="px-4 py-3">{r.referral_code ? referrers.get(r.referral_code) ?? r.referral_code : "–"}</td>
+                <td className="px-4 py-3">
+                  <Badge>{STATUS_LABELS[r.status] ?? r.status}</Badge>
+                </td>
+                <td className="px-4 py-3">
+                  {r.referral_code ? (referrers.get(r.referral_code) ?? r.referral_code) : "–"}
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-muted">No applications match these filters.</td>
+                <td colSpan={9} className="text-muted px-4 py-10 text-center">
+                  No applications match these filters.
+                </td>
               </tr>
             )}
           </tbody>

@@ -28,16 +28,26 @@ export function StatusForm({ id, status }: { id: string; status: Status }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="w-56">
-        <NativeSelect aria-label="Status" value={value} onChange={(e) => setValue(e.target.value as Status)}>
+        <NativeSelect
+          aria-label="Status"
+          value={value}
+          onChange={(e) => setValue(e.target.value as Status)}
+        >
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            <option key={s} value={s}>
+              {STATUS_LABELS[s]}
+            </option>
           ))}
         </NativeSelect>
       </div>
       <Button variant="primary" size="sm" onClick={save} disabled={saving || value === status}>
         {saving ? "Saving…" : "Update status"}
       </Button>
-      {msg && <span role="status" className="text-sm text-muted">{msg}</span>}
+      {msg && (
+        <span role="status" className="text-muted text-sm">
+          {msg}
+        </span>
+      )}
     </div>
   );
 }

@@ -21,31 +21,38 @@ export default async function ResultPage({
     <div className="mx-auto max-w-2xl px-4 py-16 text-center">
       {eligible ? (
         <>
-          <CheckCircle2 className="mx-auto size-14 text-primary" aria-hidden />
+          <CheckCircle2 className="text-primary mx-auto size-14" aria-hidden />
           <h1 className="mt-4 text-3xl font-semibold md:text-4xl">Great news — you pre-qualify!</h1>
-          <p className="mt-4 text-lg text-muted">
-            Thank you for applying. We&apos;ve sent you an email with a secure sign-in link to complete
-            your full application. It only takes a few minutes per section, and you can save as you go.
+          <p className="text-muted mt-4 text-lg">
+            Thank you for applying. We&apos;ve sent you an email with a secure sign-in link to
+            complete your full application. It only takes a few minutes per section, and you can
+            save as you go.
           </p>
           <ol className="mx-auto mt-8 max-w-md space-y-3 text-left">
-            <li><strong>1.</strong> Check your inbox (and spam folder) for an email from {SITE.brand}.</li>
-            <li><strong>2.</strong> Complete your full application in the secure portal.</li>
-            <li><strong>3.</strong> Your coordinator will reach out to schedule a short video call.</li>
+            <li>
+              <strong>1.</strong> Check your inbox (and spam folder) for an email from {SITE.brand}.
+            </li>
+            <li>
+              <strong>2.</strong> Complete your full application in the secure portal.
+            </li>
+            <li>
+              <strong>3.</strong> Your coordinator will reach out to schedule a short video call.
+            </li>
           </ol>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">
               <Link href="/portal">Go to Applicant Portal</Link>
             </Button>
           </div>
-          <p className="mt-6 text-sm text-muted">
+          <p className="text-muted mt-6 text-sm">
             Didn&apos;t get the email? You can request a new link from the portal sign-in page.
           </p>
         </>
       ) : (
         <>
-          <Heart className="mx-auto size-14 text-accent" aria-hidden />
+          <Heart className="text-accent mx-auto size-14" aria-hidden />
           <h1 className="mt-4 text-3xl font-semibold md:text-4xl">Thank you for your interest</h1>
-          <p className="mt-4 text-lg text-muted">
+          <p className="text-muted mt-4 text-lg">
             Based on the current requirements of our partner programs, we&apos;re not able to move
             forward with your application right now. These requirements are set by medical providers
             and aren&apos;t a reflection of you.

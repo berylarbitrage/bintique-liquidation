@@ -79,7 +79,9 @@ export const step3Schema = z.object({
     .or(z.literal("")),
 });
 
-export const eggApplicationSchema = step1Schema.extend(step2EggSchema.shape).extend(step3Schema.shape);
+export const eggApplicationSchema = step1Schema
+  .extend(step2EggSchema.shape)
+  .extend(step3Schema.shape);
 export const spermApplicationSchema = step1Schema
   .extend(step2SpermSchema.shape)
   .extend(step3Schema.shape);

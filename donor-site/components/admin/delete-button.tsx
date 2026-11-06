@@ -34,22 +34,40 @@ export function DeleteApplicantButton({ id, name }: { id: string; name: string }
       </Button>
       <dialog
         ref={dialog}
-        className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-2xl bg-card p-6 text-foreground backdrop:bg-black/50"
+        className="bg-card text-foreground m-auto w-[min(32rem,calc(100vw-2rem))] rounded-2xl p-6 backdrop:bg-black/50"
         aria-labelledby="delete-title"
       >
-        <h2 id="delete-title" className="text-xl font-semibold">Delete all data for {name}?</h2>
-        <p className="mt-3 text-sm text-muted">
+        <h2 id="delete-title" className="text-xl font-semibold">
+          Delete all data for {name}?
+        </h2>
+        <p className="text-muted mt-3 text-sm">
           This permanently deletes every application from this email address, the full application,
           all photos in storage, internal notes, and their login account. This cannot be undone.
         </p>
         <label htmlFor="confirm-delete" className="mt-4 block text-sm font-medium">
           Type <strong>DELETE</strong> to confirm
         </label>
-        <Input id="confirm-delete" className="mt-1" value={typed} onChange={(e) => setTyped(e.target.value)} />
-        {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
+        <Input
+          id="confirm-delete"
+          className="mt-1"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+        />
+        {error && (
+          <p role="alert" className="text-destructive mt-2 text-sm">
+            {error}
+          </p>
+        )}
         <div className="mt-5 flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => dialog.current?.close()}>Cancel</Button>
-          <Button variant="destructive" size="sm" disabled={typed !== "DELETE" || busy} onClick={run}>
+          <Button variant="ghost" size="sm" onClick={() => dialog.current?.close()}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={typed !== "DELETE" || busy}
+            onClick={run}
+          >
             {busy ? "Deleting…" : "Delete permanently"}
           </Button>
         </div>

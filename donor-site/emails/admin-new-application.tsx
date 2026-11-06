@@ -17,7 +17,9 @@ export default function AdminNewApplicationEmail({
 }) {
   return (
     <EmailLayout preview={`New ${kind}: ${name}`}>
-      <Heading as="h1" style={{ fontSize: 22 }}>New {kind} submitted</Heading>
+      <Heading as="h1" style={{ fontSize: 22 }}>
+        New {kind} submitted
+      </Heading>
       <Text>
         <strong>Name:</strong> {name}
         <br />
@@ -25,7 +27,9 @@ export default function AdminNewApplicationEmail({
         <br />
         <strong>Pre-qualified:</strong> {eligible ? "Yes" : "No"}
       </Text>
-      <Button href={adminUrl} style={button}>Open in Admin</Button>
+      <Button href={adminUrl} style={button}>
+        Open in Admin
+      </Button>
     </EmailLayout>
   );
 }

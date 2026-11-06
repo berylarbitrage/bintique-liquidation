@@ -2,7 +2,12 @@
  * Pure eligibility evaluator. Runs on the server for every submission (the
  * client result is never trusted) and in the browser only for UX hints.
  */
-import { ELIGIBILITY, EDUCATION_LEVELS, type DonorType, type EducationLevel } from "@/config/eligibility";
+import {
+  ELIGIBILITY,
+  EDUCATION_LEVELS,
+  type DonorType,
+  type EducationLevel,
+} from "@/config/eligibility";
 import { ageOn } from "@/lib/dates";
 
 export type FailReason =

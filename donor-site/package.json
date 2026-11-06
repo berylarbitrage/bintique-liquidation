@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:rls": "vitest run --config vitest.rls.config.mts",
     "email:test": "tsx --env-file-if-exists=.env.local scripts/send-test-emails.tsx",
-    "test:rls:sql": "scripts/test-rls-sql.sh"
+    "test:rls:sql": "scripts/test-rls-sql.sh",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.3",

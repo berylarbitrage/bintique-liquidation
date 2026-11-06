@@ -28,7 +28,8 @@ import { YesNo } from "@/components/forms/yes-no";
 import { Honeypot } from "@/components/forms/honeypot";
 import { Turnstile } from "@/components/forms/turnstile";
 
-type FormValues = z.input<typeof eggApplicationSchema> & Partial<z.input<typeof spermApplicationSchema>>;
+type FormValues = z.input<typeof eggApplicationSchema> &
+  Partial<z.input<typeof spermApplicationSchema>>;
 type FieldName = keyof FormValues;
 
 const STEP_TITLES = ["About you", "Health basics", "Contact details"] as const;
@@ -37,15 +38,38 @@ function stepFields(type: DonorType): FieldName[][] {
   return [
     ["dateOfBirth", "state", "zip", "education", "howHeard"],
     type === "egg"
-      ? ["heightFt", "heightIn", "weightLb", "smoker", "regularCycles", "birthControl", "previousDonation"]
-      : ["heightFt", "heightIn", "weightLb", "smoker", "previousDonation", "within60Min", "canCommit6Months"],
+      ? [
+          "heightFt",
+          "heightIn",
+          "weightLb",
+          "smoker",
+          "regularCycles",
+          "birthControl",
+          "previousDonation",
+        ]
+      : [
+          "heightFt",
+          "heightIn",
+          "weightLb",
+          "smoker",
+          "previousDonation",
+          "within60Min",
+          "canCommit6Months",
+        ],
     ["firstName", "lastName", "email", "phone", "smsConsent", "privacyConsent"],
   ];
 }
 
-const toNumber = (v: unknown) => (v === "" || v === null || v === undefined ? undefined : Number(v));
+const toNumber = (v: unknown) =>
+  v === "" || v === null || v === undefined ? undefined : Number(v);
 
-export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; turnstileSiteKey?: string }) {
+export function PrescreenForm({
+  type,
+  turnstileSiteKey,
+}: {
+  type: DonorType;
+  turnstileSiteKey?: string;
+}) {
   const router = useRouter();
   const storageKey = `prescreen:${type}`;
   const [step, setStep] = useState(0);
@@ -60,7 +84,12 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
   const form = useForm<FormValues>({
     resolver: zodResolver(applicationSchema(type)) as unknown as Resolver<FormValues>,
     mode: "onTouched",
-    defaultValues: { smsConsent: false, privacyConsent: false as unknown as true, ref: "", howHeard: "" },
+    defaultValues: {
+      smsConsent: false,
+      privacyConsent: false as unknown as true,
+      ref: "",
+      howHeard: "",
+    },
   });
   const {
     register,
@@ -135,9 +164,18 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
     const res = await fetch("/api/apply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ donorType: type, data: values, turnstileToken: token, website: honeypot }),
+      body: JSON.stringify({
+        donorType: type,
+        data: values,
+        turnstileToken: token,
+        website: honeypot,
+      }),
     });
-    const body = (await res.json().catch(() => ({}))) as { eligible?: boolean; error?: string; code?: string };
+    const body = (await res.json().catch(() => ({}))) as {
+      eligible?: boolean;
+      error?: string;
+      code?: string;
+    };
     if (!res.ok) {
       if (body.code === "underage") {
         stopPersisting.current = true;
@@ -160,12 +198,12 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
 
   if (blocked) {
     return (
-      <div role="status" className="rounded-2xl bg-card p-8 text-center shadow-sm">
+      <div role="status" className="bg-card rounded-2xl p-8 text-center shadow-sm">
         <h2 className="text-2xl font-semibold">Thank you for your interest</h2>
-        <p className="mt-3 text-muted">
-          You must be at least {MIN_APPLICANT_AGE} years old to apply to become a donor. We haven&apos;t
-          saved any of your information. We&apos;d love to hear from you once you meet the age
-          requirement.
+        <p className="text-muted mt-3">
+          You must be at least {MIN_APPLICANT_AGE} years old to apply to become a donor. We
+          haven&apos;t saved any of your information. We&apos;d love to hear from you once you meet
+          the age requirement.
         </p>
         <Button asChild variant="outline" className="mt-6">
           <Link href="/">Back to home</Link>
@@ -177,16 +215,19 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
   const pct = Math.round(((step + 1) / 3) * 100);
   const e = errors as Partial<Record<FieldName, { message?: string }>>;
   const err = (n: FieldName) => e[n]?.message;
-  const inv = (n: FieldName) => ({ "aria-invalid": !!e[n], "aria-describedby": e[n] ? `${n}-error` : undefined });
+  const inv = (n: FieldName) => ({
+    "aria-invalid": !!e[n],
+    "aria-describedby": e[n] ? `${n}-error` : undefined,
+  });
 
   return (
-    <div className="rounded-2xl bg-card p-5 shadow-sm sm:p-8">
+    <div className="bg-card rounded-2xl p-5 shadow-sm sm:p-8">
       <div className="mb-6">
-        <div className="mb-2 flex items-center justify-between text-sm">
+        <div className="mb-2 flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
           <span className="font-medium">
             Step {step + 1} of 3 · {STEP_TITLES[step]}
           </span>
-          <span className="flex items-center gap-1 text-muted">
+          <span className="text-muted flex items-center gap-1">
             <Clock className="size-4" aria-hidden /> Takes about 3 minutes
           </span>
         </div>
@@ -196,9 +237,12 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label="Application progress"
-          className="h-2 overflow-hidden rounded-full bg-muted-bg"
+          className="bg-muted-bg h-2 overflow-hidden rounded-full"
         >
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+          <div
+            className="bg-primary h-full rounded-full transition-all"
+            style={{ width: `${pct}%` }}
+          />
         </div>
       </div>
 
@@ -211,26 +255,58 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
         {step === 0 && (
           <>
             <Field id="dateOfBirth" label="Date of birth" required error={err("dateOfBirth")}>
-              <Input id="dateOfBirth" type="date" autoComplete="bday" {...inv("dateOfBirth")} {...register("dateOfBirth")} />
+              <Input
+                id="dateOfBirth"
+                type="date"
+                autoComplete="bday"
+                {...inv("dateOfBirth")}
+                {...register("dateOfBirth")}
+              />
             </Field>
             <div className="grid gap-5 sm:grid-cols-2">
               <Field id="state" label="State" required error={err("state")}>
-                <NativeSelect id="state" defaultValue="" autoComplete="address-level1" {...inv("state")} {...register("state")}>
-                  <option value="" disabled>Select your state</option>
+                <NativeSelect
+                  id="state"
+                  defaultValue=""
+                  autoComplete="address-level1"
+                  {...inv("state")}
+                  {...register("state")}
+                >
+                  <option value="" disabled>
+                    Select your state
+                  </option>
                   {US_STATES.map(([code, name]) => (
-                    <option key={code} value={code}>{name}</option>
+                    <option key={code} value={code}>
+                      {name}
+                    </option>
                   ))}
                 </NativeSelect>
               </Field>
               <Field id="zip" label="ZIP code" required error={err("zip")}>
-                <Input id="zip" inputMode="numeric" maxLength={5} autoComplete="postal-code" {...inv("zip")} {...register("zip")} />
+                <Input
+                  id="zip"
+                  inputMode="numeric"
+                  maxLength={5}
+                  autoComplete="postal-code"
+                  {...inv("zip")}
+                  {...register("zip")}
+                />
               </Field>
             </div>
             <Field id="education" label="Highest education" required error={err("education")}>
-              <NativeSelect id="education" defaultValue="" {...inv("education")} {...register("education")}>
-                <option value="" disabled>Select one</option>
+              <NativeSelect
+                id="education"
+                defaultValue=""
+                {...inv("education")}
+                {...register("education")}
+              >
+                <option value="" disabled>
+                  Select one
+                </option>
                 {EDUCATION_LEVELS.map((l) => (
-                  <option key={l} value={l}>{l}</option>
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
                 ))}
               </NativeSelect>
             </Field>
@@ -238,7 +314,9 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
               <NativeSelect id="howHeard" {...register("howHeard")}>
                 <option value="">Prefer not to say</option>
                 {HOW_HEARD.map((h) => (
-                  <option key={h} value={h}>{h}</option>
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
                 ))}
               </NativeSelect>
             </Field>
@@ -252,26 +330,60 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
                 Height<span className="text-destructive"> *</span>
               </legend>
               <div className="grid grid-cols-2 gap-3">
-                <Field id="heightFt" label={<span className="sr-only">Feet</span>} error={err("heightFt")}>
-                  <NativeSelect id="heightFt" defaultValue="" {...inv("heightFt")} {...register("heightFt", { setValueAs: toNumber })}>
-                    <option value="" disabled>Feet</option>
+                <Field
+                  id="heightFt"
+                  label={<span className="sr-only">Feet</span>}
+                  error={err("heightFt")}
+                >
+                  <NativeSelect
+                    id="heightFt"
+                    defaultValue=""
+                    {...inv("heightFt")}
+                    {...register("heightFt", { setValueAs: toNumber })}
+                  >
+                    <option value="" disabled>
+                      Feet
+                    </option>
                     {[4, 5, 6, 7].map((n) => (
-                      <option key={n} value={n}>{n} ft</option>
+                      <option key={n} value={n}>
+                        {n} ft
+                      </option>
                     ))}
                   </NativeSelect>
                 </Field>
-                <Field id="heightIn" label={<span className="sr-only">Inches</span>} error={err("heightIn")}>
-                  <NativeSelect id="heightIn" defaultValue="" {...inv("heightIn")} {...register("heightIn", { setValueAs: toNumber })}>
-                    <option value="" disabled>Inches</option>
+                <Field
+                  id="heightIn"
+                  label={<span className="sr-only">Inches</span>}
+                  error={err("heightIn")}
+                >
+                  <NativeSelect
+                    id="heightIn"
+                    defaultValue=""
+                    {...inv("heightIn")}
+                    {...register("heightIn", { setValueAs: toNumber })}
+                  >
+                    <option value="" disabled>
+                      Inches
+                    </option>
                     {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i} value={i}>{i} in</option>
+                      <option key={i} value={i}>
+                        {i} in
+                      </option>
                     ))}
                   </NativeSelect>
                 </Field>
               </div>
             </fieldset>
             <Field id="weightLb" label="Weight (lbs)" required error={err("weightLb")}>
-              <Input id="weightLb" type="number" inputMode="numeric" min={70} max={500} {...inv("weightLb")} {...register("weightLb", { setValueAs: toNumber })} />
+              <Input
+                id="weightLb"
+                type="number"
+                inputMode="numeric"
+                min={70}
+                max={500}
+                {...inv("weightLb")}
+                {...register("weightLb", { setValueAs: toNumber })}
+              />
             </Field>
             <YesNo
               name="smoker"
@@ -287,11 +399,25 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
                   error={err("regularCycles")}
                   register={register("regularCycles")}
                 />
-                <Field id="birthControl" label="Current birth control" required error={err("birthControl")}>
-                  <NativeSelect id="birthControl" defaultValue="" {...inv("birthControl")} {...register("birthControl")}>
-                    <option value="" disabled>Select one</option>
+                <Field
+                  id="birthControl"
+                  label="Current birth control"
+                  required
+                  error={err("birthControl")}
+                >
+                  <NativeSelect
+                    id="birthControl"
+                    defaultValue=""
+                    {...inv("birthControl")}
+                    {...register("birthControl")}
+                  >
+                    <option value="" disabled>
+                      Select one
+                    </option>
                     {BIRTH_CONTROL.map((b) => (
-                      <option key={b} value={b}>{b}</option>
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
                     ))}
                   </NativeSelect>
                 </Field>
@@ -326,25 +452,53 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
           <>
             <div className="grid gap-5 sm:grid-cols-2">
               <Field id="firstName" label="First name" required error={err("firstName")}>
-                <Input id="firstName" autoComplete="given-name" {...inv("firstName")} {...register("firstName")} />
+                <Input
+                  id="firstName"
+                  autoComplete="given-name"
+                  {...inv("firstName")}
+                  {...register("firstName")}
+                />
               </Field>
               <Field id="lastName" label="Last name" required error={err("lastName")}>
-                <Input id="lastName" autoComplete="family-name" {...inv("lastName")} {...register("lastName")} />
+                <Input
+                  id="lastName"
+                  autoComplete="family-name"
+                  {...inv("lastName")}
+                  {...register("lastName")}
+                />
               </Field>
             </div>
             <Field id="email" label="Email" required error={err("email")}>
-              <Input id="email" type="email" autoComplete="email" {...inv("email")} {...register("email")} />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                {...inv("email")}
+                {...register("email")}
+              />
             </Field>
             <Field id="phone" label="Mobile phone" required error={err("phone")}>
-              <Input id="phone" type="tel" autoComplete="tel-national" placeholder="(555) 555-5555" {...inv("phone")} {...register("phone")} />
+              <Input
+                id="phone"
+                type="tel"
+                autoComplete="tel-national"
+                placeholder="(555) 555-5555"
+                {...inv("phone")}
+                {...register("phone")}
+              />
             </Field>
             <input type="hidden" {...register("ref")} />
             <label className="flex items-start gap-3 text-sm">
-              <input type="checkbox" className="mt-1 size-4 shrink-0 accent-[var(--primary)]" {...register("smsConsent")} />
+              <input
+                type="checkbox"
+                className="mt-1 size-4 shrink-0 accent-[var(--primary)]"
+                {...register("smsConsent")}
+              />
               <span className="text-muted">
-                By checking this box, I agree to receive recurring automated text messages from {SITE.brand} about
-                my application at the number provided. Consent is not a condition of applying. Msg &amp; data rates
-                may apply. Msg frequency varies. Reply STOP to opt out, HELP for help.
+                By checking this box, I agree to receive recurring automated text messages from{" "}
+                {SITE.brand} about my application at the number provided. Consent is not a condition
+                of applying. Msg &amp; data rates may apply. Msg frequency varies. Reply STOP to opt
+                out, HELP for help.
               </span>
             </label>
             <div>
@@ -357,24 +511,35 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
                 />
                 <span>
                   I agree to the{" "}
-                  <Link href="/privacy" target="_blank" className="underline">Privacy Policy</Link> and{" "}
-                  <Link href="/terms" target="_blank" className="underline">Terms of Use</Link>, and confirm the
-                  information I provided is accurate.<span className="text-destructive"> *</span>
+                  <Link href="/privacy" target="_blank" className="underline">
+                    Privacy Policy
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/terms" target="_blank" className="underline">
+                    Terms of Use
+                  </Link>
+                  , and confirm the information I provided is accurate.
+                  <span className="text-destructive"> *</span>
                 </span>
               </label>
               {err("privacyConsent") && (
-                <p role="alert" className="mt-1 text-sm text-destructive">{err("privacyConsent")}</p>
+                <p role="alert" className="text-destructive mt-1 text-sm">
+                  {err("privacyConsent")}
+                </p>
               )}
             </div>
             <Turnstile siteKey={turnstileSiteKey} onToken={setToken} />
-            <p className="flex items-center gap-2 text-xs text-muted">
-              <Lock className="size-3.5" aria-hidden /> Your information is encrypted and never sold.
+            <p className="text-muted flex items-center gap-2 text-xs">
+              <Lock className="size-3.5" aria-hidden /> Your information is encrypted and never
+              sold.
             </p>
           </>
         )}
 
         {serverError && (
-          <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>
+          <p role="alert" className="bg-destructive/10 text-destructive rounded-lg p-3 text-sm">
+            {serverError}
+          </p>
         )}
 
         <div className="flex items-center justify-between gap-3 pt-2">
@@ -390,7 +555,11 @@ export function PrescreenForm({ type, turnstileSiteKey }: { type: DonorType; tur
               Next
             </Button>
           ) : (
-            <Button type="submit" size="lg" disabled={isSubmitting || (!!turnstileSiteKey && !token)}>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isSubmitting || (!!turnstileSiteKey && !token)}
+            >
               {isSubmitting ? "Submitting…" : "Submit Application"}
             </Button>
           )}

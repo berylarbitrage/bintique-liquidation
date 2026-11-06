@@ -3,11 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { log } from "@/lib/log";
 
 export type AuditAction =
-  | "view_application"
-  | "update_status"
-  | "add_note"
-  | "export_csv"
-  | "delete_applicant_data";
+  "view_application" | "update_status" | "add_note" | "export_csv" | "delete_applicant_data";
 
 /** Append to audit_log. `meta` must never contain health information. */
 export async function audit(

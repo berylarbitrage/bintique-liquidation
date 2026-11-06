@@ -14,7 +14,9 @@ export default function ContactEmail({
 }) {
   return (
     <EmailLayout preview={`Contact form: ${topic}`}>
-      <Heading as="h1" style={{ fontSize: 22 }}>New contact form message</Heading>
+      <Heading as="h1" style={{ fontSize: 22 }}>
+        New contact form message
+      </Heading>
       <Text>
         <strong>From:</strong> {name} ({email})
         <br />

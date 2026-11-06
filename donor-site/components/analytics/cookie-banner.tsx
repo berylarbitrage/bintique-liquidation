@@ -22,14 +22,14 @@ export function CookieBanner() {
       role="dialog"
       aria-live="polite"
       aria-label="Cookie preferences"
-      className="fixed inset-x-0 bottom-0 z-[60] border-t border-border bg-card p-4 shadow-2xl"
+      className="border-border bg-card fixed inset-x-0 bottom-0 z-[60] border-t p-4 shadow-2xl"
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-foreground">
+        <p className="text-foreground text-sm">
           We use necessary cookies to run this site. With your permission, we also use analytics and
           advertising cookies (Google Analytics, Meta Pixel) to improve our outreach.{" "}
           <Link href="/privacy#cookies" className="underline">
-            Learn more
+            Read our cookie policy
           </Link>
           .
         </p>

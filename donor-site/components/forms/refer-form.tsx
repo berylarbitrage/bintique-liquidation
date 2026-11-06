@@ -52,18 +52,21 @@ export function ReferForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    const j = (await res.json().catch(() => ({}))) as { links?: { egg: string; sperm: string }; error?: string };
+    const j = (await res.json().catch(() => ({}))) as {
+      links?: { egg: string; sperm: string };
+      error?: string;
+    };
     if (res.ok && j.links) setLinks(j.links);
     else setServerError(j.error ?? "Something went wrong. Please try again.");
   };
 
   if (links) {
     return (
-      <div className="space-y-5 rounded-2xl bg-card p-6 shadow-sm" role="status">
+      <div className="bg-card space-y-5 rounded-2xl p-6 shadow-sm" role="status">
         <p className="text-lg font-semibold">Your referral links are ready!</p>
-        <p className="text-sm text-muted">
-          Share the link that fits your friend. We&apos;ll remember the referral for 30 days after they
-          click it.
+        <p className="text-muted text-sm">
+          Share the link that fits your friend. We&apos;ll remember the referral for 30 days after
+          they click it.
         </p>
         <CopyRow label="Egg donor link" url={links.egg} />
         <CopyRow label="Sperm donor link" url={links.sperm} />
@@ -72,7 +75,11 @@ export function ReferForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="relative space-y-5 rounded-2xl bg-card p-6 shadow-sm">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+      className="bg-card relative space-y-5 rounded-2xl p-6 shadow-sm"
+    >
       <Honeypot {...register("website")} />
       <Field id="name" label="Your name" required error={errors.name?.message}>
         <Input id="name" autoComplete="name" aria-invalid={!!errors.name} {...register("name")} />
@@ -84,9 +91,19 @@ export function ReferForm() {
         error={errors.email?.message}
         hint="We'll use this to contact you about your bonus."
       >
-        <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register("email")} />
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          aria-invalid={!!errors.email}
+          {...register("email")}
+        />
       </Field>
-      {serverError && <p role="alert" className="text-sm text-destructive">{serverError}</p>}
+      {serverError && (
+        <p role="alert" className="text-destructive text-sm">
+          {serverError}
+        </p>
+      )}
       <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto">
         {isSubmitting ? "Creating…" : "Get My Referral Link"}
       </Button>

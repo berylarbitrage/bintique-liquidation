@@ -92,7 +92,17 @@ class Query implements PromiseLike<{ data: unknown; error: null; count?: number 
   private run() {
     const rows = this.db.tables[this.table]!;
     const match = (r: Row) => this.filters.every((f) => f(r));
-    if (this.op === "insert" || this.op === "upsert") {
+    if (this.op === "upsert") {
+      const items = Array.isArray(this.payload) ? this.payload : [this.payload!];
+      for (const p of items) {
+        const key = "application_id" in p ? "application_id" : "id";
+        const existing = rows.find((r) => r[key] === p[key]);
+        if (existing) Object.assign(existing, p);
+        else rows.push({ sections: {}, completed_sections: [], ...p });
+      }
+      return { data: null, error: null };
+    }
+    if (this.op === "insert") {
       const items = (Array.isArray(this.payload) ? this.payload : [this.payload!]).map((p) => ({
         id: crypto.randomUUID(),
         created_at: new Date().toISOString(),

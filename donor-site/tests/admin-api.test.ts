@@ -15,9 +15,16 @@ vi.mock("next/navigation", () => ({
 }));
 // The user-scoped client: same fake DB, plus auth.getUser().
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => Object.assign(Object.create(db), { auth: { getUser: async () => ({ data: { user: currentUser } }) }, from: db.from.bind(db) }),
+  createClient: async () =>
+    Object.assign(Object.create(db), {
+      auth: { getUser: async () => ({ data: { user: currentUser } }) },
+      from: db.from.bind(db),
+    }),
 }));
-vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => db, PHOTO_BUCKET: "donor-photos" }));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => db,
+  PHOTO_BUCKET: "donor-photos",
+}));
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost:54321";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon";
@@ -112,7 +119,10 @@ describe("admin actions", () => {
 
   it("adding a note stores the author and audits it", async () => {
     await patch({ note: "Called, left voicemail" });
-    expect(db.tables.admin_notes![0]).toMatchObject({ author_id: "admin-1", body: "Called, left voicemail" });
+    expect(db.tables.admin_notes![0]).toMatchObject({
+      author_id: "admin-1",
+      body: "Called, left voicemail",
+    });
     expect(db.tables.audit_log!.map((a) => a.action)).toEqual(["add_note"]);
   });
 

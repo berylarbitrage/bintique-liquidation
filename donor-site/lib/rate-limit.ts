@@ -20,8 +20,6 @@ export function rateLimit(key: string, limit = 10, windowMs = 60_000, now = Date
 
 export function clientIp(headers: Headers): string {
   return (
-    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headers.get("x-real-ip") ||
-    "unknown"
+    headers.get("x-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip") || "unknown"
   );
 }

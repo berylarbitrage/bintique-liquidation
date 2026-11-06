@@ -11,11 +11,11 @@ export default function TermsPage() {
   return (
     <Section title="Terms of Use">
       <div className="prose-legal max-w-3xl">
-        <p className="rounded-lg bg-accent-soft p-3 text-sm font-semibold">
+        <p className="bg-accent-soft rounded-lg p-3 text-sm font-semibold">
           DRAFT — PLACEHOLDER TEXT. These terms must be reviewed by a qualified attorney before
           launch.
         </p>
-        <p className="text-sm text-muted">Last updated: [DATE]</p>
+        <p className="text-muted text-sm">Last updated: [DATE]</p>
         <h2>1. Acceptance</h2>
         <p>By using {SITE.domain}, you agree to these Terms and our Privacy Policy.</p>
         <h2>2. No medical advice</h2>

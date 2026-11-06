@@ -23,15 +23,15 @@ export function YesNo({
         {legend}
         <span className="text-destructive"> *</span>
       </legend>
-      {hint && <p className="text-xs text-muted">{hint}</p>}
+      {hint && <p className="text-muted text-xs">{hint}</p>}
       <div className="flex gap-3">
         {(["yes", "no"] as const).map((v) => (
           <label
             key={v}
             className={cn(
-              "flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full border-2 border-border bg-card text-sm font-medium capitalize",
+              "border-border bg-card flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full border-2 text-sm font-medium capitalize",
               "has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:checked]:text-primary",
-              "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ring",
+              "has-[:focus-visible]:outline-ring has-[:focus-visible]:outline-2",
             )}
           >
             <input type="radio" value={v} className="sr-only" {...register} />
@@ -40,7 +40,7 @@ export function YesNo({
         ))}
       </div>
       {error && (
-        <p id={`${name}-error`} role="alert" className="text-sm text-destructive">
+        <p id={`${name}-error`} role="alert" className="text-destructive text-sm">
           {error}
         </p>
       )}

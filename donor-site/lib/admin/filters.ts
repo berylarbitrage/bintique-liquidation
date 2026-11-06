@@ -21,7 +21,10 @@ export function parseFilters(sp: Record<string, string | string[] | undefined>):
 
 /** Strip characters that have meaning in PostgREST filter syntax or LIKE patterns. */
 export function sanitizeSearch(q: string): string {
-  return q.replace(/[%_,.()*\\:"']/g, " ").replace(/\s+/g, " ").trim();
+  return q
+    .replace(/[%_,.()*\\:"']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Minimal interface of the supabase query builder we use, for reuse across list + export. */

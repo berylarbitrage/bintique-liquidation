@@ -18,7 +18,11 @@ import { DeleteApplicantButton } from "@/components/admin/delete-button";
 
 const SIGNED_URL_TTL = 600; // 10 minutes
 
-export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ApplicationDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase, user } = await requireAdmin();
@@ -26,21 +30,30 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const { data: app } = await supabase.from("applications").select("*").eq("id", id).maybeSingle();
   if (!app) notFound();
 
-  const [{ data: full }, { data: photos }, { data: notes }, { data: referrer }, { data: history }] = await Promise.all([
-    supabase.from("full_applications").select("*").eq("application_id", id).maybeSingle(),
-    supabase.from("photos").select("*").eq("application_id", id).order("created_at"),
-    supabase.from("admin_notes").select("*").eq("application_id", id).order("created_at", { ascending: false }),
-    app.referral_code
-      ? supabase.from("referrers").select("name,email").eq("code", app.referral_code).maybeSingle()
-      : Promise.resolve({ data: null }),
-    supabase
-      .from("audit_log")
-      .select("action,meta,created_at,actor_id")
-      .eq("target_id", id)
-      .in("action", ["update_status"])
-      .order("created_at", { ascending: false })
-      .limit(20),
-  ]);
+  const [{ data: full }, { data: photos }, { data: notes }, { data: referrer }, { data: history }] =
+    await Promise.all([
+      supabase.from("full_applications").select("*").eq("application_id", id).maybeSingle(),
+      supabase.from("photos").select("*").eq("application_id", id).order("created_at"),
+      supabase
+        .from("admin_notes")
+        .select("*")
+        .eq("application_id", id)
+        .order("created_at", { ascending: false }),
+      app.referral_code
+        ? supabase
+            .from("referrers")
+            .select("name,email")
+            .eq("code", app.referral_code)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase
+        .from("audit_log")
+        .select("action,meta,created_at,actor_id")
+        .eq("target_id", id)
+        .in("action", ["update_status"])
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
 
   await audit(user.id, "view_application", id);
 
@@ -48,14 +61,21 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const service = createAdminClient();
   const signed = new Map<string, string>();
   if (photos?.length) {
-    const { data: urls } = await service.storage
-      .from(PHOTO_BUCKET)
-      .createSignedUrls(photos.map((p) => p.storage_path), SIGNED_URL_TTL);
+    const { data: urls } = await service.storage.from(PHOTO_BUCKET).createSignedUrls(
+      photos.map((p) => p.storage_path),
+      SIGNED_URL_TTL,
+    );
     urls?.forEach((u) => u.path && u.signedUrl && signed.set(u.path, u.signedUrl));
   }
 
   // Note / history authors.
-  const authorIds = [...new Set([...(notes ?? []).map((n) => n.author_id), ...(history ?? []).map((h) => h.actor_id)].filter(Boolean))] as string[];
+  const authorIds = [
+    ...new Set(
+      [...(notes ?? []).map((n) => n.author_id), ...(history ?? []).map((h) => h.actor_id)].filter(
+        Boolean,
+      ),
+    ),
+  ] as string[];
   const authors = new Map<string, string>();
   await Promise.all(
     authorIds.map(async (aid) => {
@@ -67,21 +87,27 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const sections = (full?.sections ?? {}) as Record<string, Record<string, unknown>>;
   const completed = (full?.completed_sections ?? []) as string[];
   const name = `${app.first_name} ${app.last_name}`;
-  const fmt = (d: string) => new Date(d).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+  const fmt = (d: string) =>
+    new Date(d).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 
   return (
     <div className="space-y-6">
-      <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-primary underline">
+      <Link href="/admin" className="text-primary inline-flex items-center gap-1 text-sm underline">
         <ArrowLeft className="size-4" aria-hidden /> All applications
       </Link>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold">{name}</h1>
-          <p className="mt-1 text-sm text-muted">
-            <span className="capitalize">{app.donor_type}</span> donor · submitted {fmt(app.created_at)}
+          <p className="text-muted mt-1 text-sm">
+            <span className="capitalize">{app.donor_type}</span> donor · submitted{" "}
+            {fmt(app.created_at)}
           </p>
           <div className="mt-2 flex gap-2">
-            {app.eligible ? <Badge tone="success">Pre-qualified</Badge> : <Badge tone="danger">Not pre-qualified</Badge>}
+            {app.eligible ? (
+              <Badge tone="success">Pre-qualified</Badge>
+            ) : (
+              <Badge tone="danger">Not pre-qualified</Badge>
+            )}
             <Badge>{STATUS_LABELS[app.status as Status] ?? app.status}</Badge>
             {full && <Badge tone="warn">Full app {completionPercent(completed)}%</Badge>}
           </div>
@@ -100,7 +126,12 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                 ["SMS consent", app.sms_consent],
                 ["State / ZIP", `${app.state} ${app.zip}`],
                 ["Source", app.how_heard],
-                ["Referrer", referrer ? `${referrer.name} (${referrer.email}) · ${app.referral_code}` : app.referral_code],
+                [
+                  "Referrer",
+                  referrer
+                    ? `${referrer.name} (${referrer.email}) · ${app.referral_code}`
+                    : app.referral_code,
+                ],
               ]}
             />
           </Card>
@@ -108,9 +139,15 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             <h2 className="mb-4 font-sans text-lg font-semibold">Pre-screen</h2>
             <DefList
               items={[
-                ["Date of birth", `${app.date_of_birth} (age ${ageOn(app.date_of_birth, new Date())})`],
+                [
+                  "Date of birth",
+                  `${app.date_of_birth} (age ${ageOn(app.date_of_birth, new Date())})`,
+                ],
                 ["Education", app.education],
-                ["Height", app.height_in ? `${Math.floor(app.height_in / 12)}'${app.height_in % 12}"` : null],
+                [
+                  "Height",
+                  app.height_in ? `${Math.floor(app.height_in / 12)}'${app.height_in % 12}"` : null,
+                ],
                 ["Weight", app.weight_lb ? `${app.weight_lb} lb` : null],
                 ["BMI", app.bmi],
                 ["Nicotine use", app.smoker],
@@ -137,10 +174,17 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
               <Card key={s.id}>
                 <h2 className="mb-4 flex items-center gap-2 font-sans text-lg font-semibold">
                   {s.title}
-                  {completed.includes(s.id) ? <Badge tone="success">Complete</Badge> : <Badge>Incomplete</Badge>}
+                  {completed.includes(s.id) ? (
+                    <Badge tone="success">Complete</Badge>
+                  ) : (
+                    <Badge>Incomplete</Badge>
+                  )}
                 </h2>
                 <DefList
-                  items={sectionFields(s.id, app.donor_type).map((f) => [f.label, sections[s.id]?.[f.name]])}
+                  items={sectionFields(s.id, app.donor_type).map((f) => [
+                    f.label,
+                    sections[s.id]?.[f.name],
+                  ])}
                 />
               </Card>
             ))}
@@ -165,16 +209,18 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                         />
                       </a>
                     ) : (
-                      <div className="aspect-square rounded-lg bg-muted-bg" />
+                      <div className="bg-muted-bg aspect-square rounded-lg" />
                     )}
-                    <p className="mt-1 text-xs text-muted capitalize">{p.kind}</p>
+                    <p className="text-muted mt-1 text-xs capitalize">{p.kind}</p>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted">No photos uploaded.</p>
+              <p className="text-muted text-sm">No photos uploaded.</p>
             )}
-            <p className="mt-3 text-xs text-muted">Photo links expire after 10 minutes. Reload the page for new links.</p>
+            <p className="text-muted mt-3 text-xs">
+              Photo links expire after 10 minutes. Reload the page for new links.
+            </p>
           </Card>
 
           {full?.signed_name && (
@@ -195,16 +241,16 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           <Card>
             <h2 className="mb-4 font-sans text-lg font-semibold">Internal notes</h2>
             <NoteForm id={id} />
-            <ol className="mt-6 space-y-4 border-l-2 border-primary-soft pl-4">
+            <ol className="border-primary-soft mt-6 space-y-4 border-l-2 pl-4">
               {notes?.map((n) => (
                 <li key={n.id}>
-                  <p className="text-xs text-muted">
+                  <p className="text-muted text-xs">
                     {authors.get(n.author_id) ?? "Unknown"} · {fmt(n.created_at)}
                   </p>
                   <p className="mt-1 text-sm whitespace-pre-wrap">{n.body}</p>
                 </li>
               ))}
-              {!notes?.length && <li className="text-sm text-muted">No notes yet.</li>}
+              {!notes?.length && <li className="text-muted text-sm">No notes yet.</li>}
             </ol>
           </Card>
           <Card>
@@ -214,8 +260,11 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                 const m = h.meta as { from?: string; to?: string };
                 return (
                   <li key={i}>
-                    <span className="text-muted">{fmt(h.created_at)}</span> · {m.from} → <strong>{m.to}</strong>
-                    <span className="block text-xs text-muted">{authors.get(h.actor_id) ?? ""}</span>
+                    <span className="text-muted">{fmt(h.created_at)}</span> · {m.from} →{" "}
+                    <strong>{m.to}</strong>
+                    <span className="text-muted block text-xs">
+                      {authors.get(h.actor_id) ?? ""}
+                    </span>
                   </li>
                 );
               })}
@@ -224,7 +273,9 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           </Card>
           <Card className="border-destructive/40">
             <h2 className="mb-2 font-sans text-lg font-semibold">Danger zone</h2>
-            <p className="mb-4 text-sm text-muted">Use for data deletion requests (CCPA / right to delete).</p>
+            <p className="text-muted mb-4 text-sm">
+              Use for data deletion requests (CCPA / right to delete).
+            </p>
             <DeleteApplicantButton id={id} name={name} />
           </Card>
         </div>

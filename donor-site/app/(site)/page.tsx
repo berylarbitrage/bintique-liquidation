@@ -71,14 +71,14 @@ export default function HomePage() {
       <Section eyebrow="Compensation" title="Compensated for your time and commitment">
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="bg-accent-soft">
-            <p className="text-sm font-semibold text-primary">Egg donors</p>
+            <p className="text-primary text-sm font-semibold">Egg donors</p>
             <p className="mt-2 font-serif text-3xl font-semibold">{SITE.eggComp}</p>
             <Link href="/egg-donor" className="mt-4 inline-block text-sm font-medium underline">
               Learn about egg donation
             </Link>
           </Card>
           <Card className="bg-primary-soft">
-            <p className="text-sm font-semibold text-primary">Sperm donors</p>
+            <p className="text-primary text-sm font-semibold">Sperm donors</p>
             <p className="mt-2 font-serif text-3xl font-semibold">{SITE.spermComp}</p>
             <Link href="/sperm-donor" className="mt-4 inline-block text-sm font-medium underline">
               Learn about sperm donation
@@ -92,12 +92,12 @@ export default function HomePage() {
             { icon: CalendarClock, label: "Flexible scheduling" },
           ].map(({ icon: Icon, label }) => (
             <li key={label} className="flex items-center gap-3 font-medium">
-              <Icon className="size-5 text-primary" aria-hidden />
+              <Icon className="text-primary size-5" aria-hidden />
               {label}
             </li>
           ))}
         </ul>
-        <p className="mt-6 text-sm text-muted">
+        <p className="text-muted mt-6 text-sm">
           Compensation amounts vary by program and are paid for your time, effort, and commitment.
         </p>
       </Section>
@@ -106,12 +106,12 @@ export default function HomePage() {
         <Section eyebrow="How it works" title="Four simple steps">
           <ol className="grid gap-6 md:grid-cols-4">
             {PROCESS.map((s, i) => (
-              <li key={s.title} className="rounded-2xl bg-card p-6 shadow-sm">
-                <span className="flex size-10 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
+              <li key={s.title} className="bg-card rounded-2xl p-6 shadow-sm">
+                <span className="bg-primary text-primary-foreground flex size-10 items-center justify-center rounded-full font-semibold">
                   {i + 1}
                 </span>
                 <h3 className="mt-4 font-sans text-lg font-semibold">{s.title}</h3>
-                <p className="mt-1 text-muted">{s.body}</p>
+                <p className="text-muted mt-1">{s.body}</p>
               </li>
             ))}
           </ol>
@@ -122,9 +122,9 @@ export default function HomePage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {WHY.map(({ icon: Icon, title, body }) => (
             <div key={title}>
-              <Icon className="size-8 text-accent" aria-hidden />
+              <Icon className="text-accent size-8" aria-hidden />
               <h3 className="mt-3 font-sans text-lg font-semibold">{title}</h3>
-              <p className="mt-1 text-muted">{body}</p>
+              <p className="text-muted mt-1">{body}</p>
             </div>
           ))}
         </div>
@@ -132,7 +132,7 @@ export default function HomePage() {
 
       <Section eyebrow="FAQ" title="Common questions">
         <FaqList items={HOME_FAQ} />
-        <Link href="/faq" className="mt-6 inline-block font-medium text-primary underline">
+        <Link href="/faq" className="text-primary mt-6 inline-block font-medium underline">
           See all FAQs
         </Link>
       </Section>

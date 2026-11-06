@@ -6,7 +6,7 @@ import { SITE } from "@/config/site";
 export function ReferralBanner() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-10">
-      <div className="flex flex-col items-start gap-6 rounded-3xl bg-primary p-8 text-primary-foreground md:flex-row md:items-center md:justify-between md:p-12">
+      <div className="bg-primary text-primary-foreground flex flex-col items-start gap-6 rounded-3xl p-8 md:flex-row md:items-center md:justify-between md:p-12">
         <div className="flex items-start gap-4">
           <Gift className="mt-1 size-8 shrink-0" aria-hidden />
           <div>

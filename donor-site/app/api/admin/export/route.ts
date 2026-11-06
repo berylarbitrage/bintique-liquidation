@@ -27,9 +27,15 @@ export async function GET(req: Request) {
     return errorJson("Export failed", 500);
   }
   const rows = (data ?? []) as unknown as ExportRow[];
-  await audit(admin.user.id, "export_csv", null, { filters: { ...filters, q: filters.q ? "[search]" : undefined }, rows: rows.length });
+  await audit(admin.user.id, "export_csv", null, {
+    filters: { ...filters, q: filters.q ? "[search]" : undefined },
+    rows: rows.length,
+  });
 
-  const csv = toCsv(EXPORT_HEADERS, rows.map((r) => exportRow(r)));
+  const csv = toCsv(
+    EXPORT_HEADERS,
+    rows.map((r) => exportRow(r)),
+  );
   const stamp = new Date().toISOString().slice(0, 10);
   return new Response(csv, {
     headers: {

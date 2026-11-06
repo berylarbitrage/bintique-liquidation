@@ -26,7 +26,13 @@ export interface FormSectionDef {
   fields: FieldDef[];
 }
 
-export const FORM_SECTION_IDS = ["background", "appearance", "medical", "family", "reproductive"] as const;
+export const FORM_SECTION_IDS = [
+  "background",
+  "appearance",
+  "medical",
+  "family",
+  "reproductive",
+] as const;
 export type FormSectionId = (typeof FORM_SECTION_IDS)[number];
 export const ALL_SECTION_IDS = [...FORM_SECTION_IDS, "photos", "signature"] as const;
 export type SectionId = (typeof ALL_SECTION_IDS)[number];
@@ -78,10 +84,34 @@ export const FORM_SECTIONS: FormSectionDef[] = [
     title: SECTION_TITLES.background,
     description: "Help intended parents get to know you.",
     fields: [
-      { name: "occupation", label: "Occupation or field of study", kind: "text", required: true, max: 120 },
-      { name: "hobbies", label: "Hobbies and interests", kind: "textarea", required: true, max: 1500 },
-      { name: "personality", label: "Describe your personality", kind: "textarea", required: true, max: 1500 },
-      { name: "whyDonate", label: "Why would you like to become a donor?", kind: "textarea", required: true, max: 1500 },
+      {
+        name: "occupation",
+        label: "Occupation or field of study",
+        kind: "text",
+        required: true,
+        max: 120,
+      },
+      {
+        name: "hobbies",
+        label: "Hobbies and interests",
+        kind: "textarea",
+        required: true,
+        max: 1500,
+      },
+      {
+        name: "personality",
+        label: "Describe your personality",
+        kind: "textarea",
+        required: true,
+        max: 1500,
+      },
+      {
+        name: "whyDonate",
+        label: "Why would you like to become a donor?",
+        kind: "textarea",
+        required: true,
+        max: 1500,
+      },
     ],
   },
   {
@@ -89,11 +119,41 @@ export const FORM_SECTIONS: FormSectionDef[] = [
     title: SECTION_TITLES.appearance,
     description: "Used only for anonymous profile matching.",
     fields: [
-      { name: "eyeColor", label: "Eye color", kind: "select", required: true, options: ["Brown", "Hazel", "Green", "Blue", "Gray", "Other"] },
-      { name: "hairColor", label: "Natural hair color", kind: "select", required: true, options: ["Black", "Dark brown", "Light brown", "Blonde", "Red", "Gray", "Other"] },
-      { name: "hairTexture", label: "Hair texture", kind: "select", required: true, options: ["Straight", "Wavy", "Curly", "Coily"] },
-      { name: "skinTone", label: "Skin tone", kind: "select", required: true, options: ["Very fair", "Fair", "Medium", "Olive", "Brown", "Dark"] },
-      { name: "build", label: "Body build", kind: "select", required: true, options: ["Slim", "Athletic", "Average", "Curvy / stocky"] },
+      {
+        name: "eyeColor",
+        label: "Eye color",
+        kind: "select",
+        required: true,
+        options: ["Brown", "Hazel", "Green", "Blue", "Gray", "Other"],
+      },
+      {
+        name: "hairColor",
+        label: "Natural hair color",
+        kind: "select",
+        required: true,
+        options: ["Black", "Dark brown", "Light brown", "Blonde", "Red", "Gray", "Other"],
+      },
+      {
+        name: "hairTexture",
+        label: "Hair texture",
+        kind: "select",
+        required: true,
+        options: ["Straight", "Wavy", "Curly", "Coily"],
+      },
+      {
+        name: "skinTone",
+        label: "Skin tone",
+        kind: "select",
+        required: true,
+        options: ["Very fair", "Fair", "Medium", "Olive", "Brown", "Dark"],
+      },
+      {
+        name: "build",
+        label: "Body build",
+        kind: "select",
+        required: true,
+        options: ["Slim", "Athletic", "Average", "Curvy / stocky"],
+      },
       { name: "glasses", label: "Do you wear glasses or contacts?", kind: "yesno", required: true },
     ],
   },
@@ -102,15 +162,59 @@ export const FORM_SECTIONS: FormSectionDef[] = [
     title: SECTION_TITLES.medical,
     description: "Confidential. Shared only with partner medical providers.",
     fields: [
-      { name: "conditions", label: "Have you ever been diagnosed with any of the following?", kind: "multi", required: true, options: PERSONAL_CONDITIONS },
-      { name: "conditionDetails", label: "Details about any conditions above", kind: "textarea", max: 2000 },
-      { name: "medications", label: "Current medications (or 'None')", kind: "textarea", required: true, max: 1000 },
-      { name: "surgeries", label: "Past surgeries or hospitalizations (or 'None')", kind: "textarea", required: true, max: 1000 },
+      {
+        name: "conditions",
+        label: "Have you ever been diagnosed with any of the following?",
+        kind: "multi",
+        required: true,
+        options: PERSONAL_CONDITIONS,
+      },
+      {
+        name: "conditionDetails",
+        label: "Details about any conditions above",
+        kind: "textarea",
+        max: 2000,
+      },
+      {
+        name: "medications",
+        label: "Current medications (or 'None')",
+        kind: "textarea",
+        required: true,
+        max: 1000,
+      },
+      {
+        name: "surgeries",
+        label: "Past surgeries or hospitalizations (or 'None')",
+        kind: "textarea",
+        required: true,
+        max: 1000,
+      },
       { name: "allergies", label: "Allergies (or 'None')", kind: "text", required: true, max: 300 },
-      { name: "mentalHealthTreatment", label: "Have you ever received treatment for a mental health condition?", kind: "yesno", required: true },
-      { name: "alcohol", label: "Alcohol use", kind: "select", required: true, options: ["None", "Occasional", "Weekly", "Daily"] },
-      { name: "recreationalDrugs", label: "Have you used recreational drugs in the past 12 months?", kind: "yesno", required: true },
-      { name: "recentTattoo", label: "Have you had a tattoo or piercing in the past 12 months?", kind: "yesno", required: true },
+      {
+        name: "mentalHealthTreatment",
+        label: "Have you ever received treatment for a mental health condition?",
+        kind: "yesno",
+        required: true,
+      },
+      {
+        name: "alcohol",
+        label: "Alcohol use",
+        kind: "select",
+        required: true,
+        options: ["None", "Occasional", "Weekly", "Daily"],
+      },
+      {
+        name: "recreationalDrugs",
+        label: "Have you used recreational drugs in the past 12 months?",
+        kind: "yesno",
+        required: true,
+      },
+      {
+        name: "recentTattoo",
+        label: "Have you had a tattoo or piercing in the past 12 months?",
+        kind: "yesno",
+        required: true,
+      },
     ],
   },
   {
@@ -119,12 +223,48 @@ export const FORM_SECTIONS: FormSectionDef[] = [
     description: "Three generations: parents, siblings and grandparents. Share what you know.",
     fields: [
       { name: "adopted", label: "Were you adopted?", kind: "yesno", required: true },
-      { name: "familyConditions", label: "Has any blood relative had any of the following?", kind: "multi", required: true, options: FAMILY_CONDITIONS },
-      { name: "mother", label: "Mother — health conditions, or age and cause of death", kind: "textarea", required: true, max: 1000 },
-      { name: "father", label: "Father — health conditions, or age and cause of death", kind: "textarea", required: true, max: 1000 },
-      { name: "siblings", label: "Siblings — health conditions (or 'None')", kind: "textarea", required: true, max: 1000 },
-      { name: "maternalGrandparents", label: "Maternal grandparents — health conditions / cause of death", kind: "textarea", required: true, max: 1000 },
-      { name: "paternalGrandparents", label: "Paternal grandparents — health conditions / cause of death", kind: "textarea", required: true, max: 1000 },
+      {
+        name: "familyConditions",
+        label: "Has any blood relative had any of the following?",
+        kind: "multi",
+        required: true,
+        options: FAMILY_CONDITIONS,
+      },
+      {
+        name: "mother",
+        label: "Mother — health conditions, or age and cause of death",
+        kind: "textarea",
+        required: true,
+        max: 1000,
+      },
+      {
+        name: "father",
+        label: "Father — health conditions, or age and cause of death",
+        kind: "textarea",
+        required: true,
+        max: 1000,
+      },
+      {
+        name: "siblings",
+        label: "Siblings — health conditions (or 'None')",
+        kind: "textarea",
+        required: true,
+        max: 1000,
+      },
+      {
+        name: "maternalGrandparents",
+        label: "Maternal grandparents — health conditions / cause of death",
+        kind: "textarea",
+        required: true,
+        max: 1000,
+      },
+      {
+        name: "paternalGrandparents",
+        label: "Paternal grandparents — health conditions / cause of death",
+        kind: "textarea",
+        required: true,
+        max: 1000,
+      },
     ],
   },
   {
@@ -132,14 +272,72 @@ export const FORM_SECTIONS: FormSectionDef[] = [
     title: SECTION_TITLES.reproductive,
     description: "Confidential. Shared only with partner medical providers.",
     fields: [
-      { name: "ageFirstPeriod", label: "Age at first period", kind: "number", required: true, min: 8, max: 20, onlyFor: "egg" },
-      { name: "cycleLength", label: "Typical cycle length (days)", kind: "number", required: true, min: 15, max: 60, onlyFor: "egg" },
-      { name: "pregnancies", label: "Number of pregnancies", kind: "number", required: true, min: 0, max: 20, onlyFor: "egg" },
-      { name: "liveBirths", label: "Number of live births", kind: "number", required: true, min: 0, max: 20, onlyFor: "egg" },
-      { name: "childrenFathered", label: "Number of biological children", kind: "number", required: true, min: 0, max: 50, onlyFor: "sperm" },
-      { name: "vasectomy", label: "Have you had a vasectomy?", kind: "yesno", required: true, onlyFor: "sperm" },
-      { name: "stdHistory", label: "Have you ever been diagnosed with an STI?", kind: "yesno", required: true },
-      { name: "reproductiveConditions", label: "Any reproductive conditions or concerns (or 'None')", kind: "textarea", required: true, max: 1500, hint: "For example: PCOS, endometriosis, varicocele, undescended testicle." },
+      {
+        name: "ageFirstPeriod",
+        label: "Age at first period",
+        kind: "number",
+        required: true,
+        min: 8,
+        max: 20,
+        onlyFor: "egg",
+      },
+      {
+        name: "cycleLength",
+        label: "Typical cycle length (days)",
+        kind: "number",
+        required: true,
+        min: 15,
+        max: 60,
+        onlyFor: "egg",
+      },
+      {
+        name: "pregnancies",
+        label: "Number of pregnancies",
+        kind: "number",
+        required: true,
+        min: 0,
+        max: 20,
+        onlyFor: "egg",
+      },
+      {
+        name: "liveBirths",
+        label: "Number of live births",
+        kind: "number",
+        required: true,
+        min: 0,
+        max: 20,
+        onlyFor: "egg",
+      },
+      {
+        name: "childrenFathered",
+        label: "Number of biological children",
+        kind: "number",
+        required: true,
+        min: 0,
+        max: 50,
+        onlyFor: "sperm",
+      },
+      {
+        name: "vasectomy",
+        label: "Have you had a vasectomy?",
+        kind: "yesno",
+        required: true,
+        onlyFor: "sperm",
+      },
+      {
+        name: "stdHistory",
+        label: "Have you ever been diagnosed with an STI?",
+        kind: "yesno",
+        required: true,
+      },
+      {
+        name: "reproductiveConditions",
+        label: "Any reproductive conditions or concerns (or 'None')",
+        kind: "textarea",
+        required: true,
+        max: 1500,
+        hint: "For example: PCOS, endometriosis, varicocele, undescended testicle.",
+      },
     ],
   },
 ];
@@ -154,7 +352,10 @@ function fieldSchema(f: FieldDef, strict: boolean): z.ZodType {
   switch (f.kind) {
     case "text":
     case "textarea": {
-      const base = z.string().trim().max(f.max ?? 2000, `Please keep this under ${f.max ?? 2000} characters`);
+      const base = z
+        .string()
+        .trim()
+        .max(f.max ?? 2000, `Please keep this under ${f.max ?? 2000} characters`);
       return strict && f.required ? base.min(1, requiredMsg) : base.optional();
     }
     case "select": {
@@ -167,7 +368,9 @@ function fieldSchema(f: FieldDef, strict: boolean): z.ZodType {
     }
     case "multi": {
       const arr = z.array(z.enum(f.options as [string, ...string[]])).max(f.options!.length);
-      return strict && f.required ? arr.min(1, "Please select at least one option (or 'None of these')") : arr.optional();
+      return strict && f.required
+        ? arr.min(1, "Please select at least one option (or 'None of these')")
+        : arr.optional();
     }
     case "number": {
       const n = z

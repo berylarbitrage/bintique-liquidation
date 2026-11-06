@@ -38,8 +38,8 @@ export function ContactForm() {
 
   if (status === "sent") {
     return (
-      <div role="status" className="rounded-2xl bg-primary-soft p-6">
-        <CheckCircle2 className="size-8 text-primary" aria-hidden />
+      <div role="status" className="bg-primary-soft rounded-2xl p-6">
+        <CheckCircle2 className="text-primary size-8" aria-hidden />
         <p className="mt-3 text-lg font-semibold">Thanks — we got your message.</p>
         <p className="text-muted">We usually reply within one business day.</p>
       </div>
@@ -53,13 +53,28 @@ export function ContactForm() {
         <Input id="name" autoComplete="name" aria-invalid={!!errors.name} {...register("name")} />
       </Field>
       <Field id="email" label="Email" required error={errors.email?.message}>
-        <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register("email")} />
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          aria-invalid={!!errors.email}
+          {...register("email")}
+        />
       </Field>
       <Field id="topic" label="Topic" required error={errors.topic?.message}>
-        <NativeSelect id="topic" defaultValue="" aria-invalid={!!errors.topic} {...register("topic")}>
-          <option value="" disabled>Choose a topic</option>
+        <NativeSelect
+          id="topic"
+          defaultValue=""
+          aria-invalid={!!errors.topic}
+          {...register("topic")}
+        >
+          <option value="" disabled>
+            Choose a topic
+          </option>
           {CONTACT_TOPICS.map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </NativeSelect>
       </Field>
@@ -72,7 +87,11 @@ export function ContactForm() {
       >
         <Textarea id="message" rows={6} aria-invalid={!!errors.message} {...register("message")} />
       </Field>
-      {serverError && <p role="alert" className="text-sm text-destructive">{serverError}</p>}
+      {serverError && (
+        <p role="alert" className="text-destructive text-sm">
+          {serverError}
+        </p>
+      )}
       <Button type="submit" disabled={isSubmitting} size="lg">
         {isSubmitting ? "Sending…" : "Send Message"}
       </Button>

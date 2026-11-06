@@ -66,7 +66,9 @@ describe("export columns", () => {
 
 describe("admin filters", () => {
   it("parses valid params and drops invalid ones", () => {
-    expect(parseFilters({ type: "egg", status: "bogus", eligible: "yes", state: "ZZ", page: "2" })).toEqual({
+    expect(
+      parseFilters({ type: "egg", status: "bogus", eligible: "yes", state: "ZZ", page: "2" }),
+    ).toEqual({
       type: "egg",
       eligible: "yes",
       page: 2,

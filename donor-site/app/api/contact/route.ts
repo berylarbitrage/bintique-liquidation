@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     react: createElement(ContactEmail, data),
     replyTo: data.email,
   });
-  if (!sent && env("RESEND_API_KEY")) return errorJson("Could not send message. Please email us.", 502);
+  if (!sent && env("RESEND_API_KEY"))
+    return errorJson("Could not send message. Please email us.", 502);
   return json({ ok: true });
 }

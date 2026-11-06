@@ -11,11 +11,11 @@ export default function PrivacyPage() {
   return (
     <Section title="Privacy Policy">
       <div className="prose-legal max-w-3xl">
-        <p className="rounded-lg bg-accent-soft p-3 text-sm font-semibold">
+        <p className="bg-accent-soft rounded-lg p-3 text-sm font-semibold">
           DRAFT — PLACEHOLDER TEXT. This policy must be reviewed by a qualified attorney before
           launch.
         </p>
-        <p className="text-sm text-muted">Last updated: [DATE]</p>
+        <p className="text-muted text-sm">Last updated: [DATE]</p>
 
         <h2>1. Who we are</h2>
         <p>
@@ -53,7 +53,9 @@ export default function PrivacyPage() {
           <li>To secure our services and prevent fraud.</li>
           <li>To send text messages only if you opted in (reply STOP to opt out at any time).</li>
         </ul>
-        <p>We never sell your personal information. Health information is never used for advertising.</p>
+        <p>
+          We never sell your personal information. Health information is never used for advertising.
+        </p>
 
         <h2>4. Who can see it</h2>
         <p>
@@ -64,8 +66,8 @@ export default function PrivacyPage() {
 
         <h2>5. How long we keep it</h2>
         <p>
-          [RETENTION PERIOD — e.g. pre-screen data for applicants who do not proceed is deleted after
-          24 months.] Data may be kept longer where required by law.
+          [RETENTION PERIOD — e.g. pre-screen data for applicants who do not proceed is deleted
+          after 24 months.] Data may be kept longer where required by law.
         </p>
 
         <h2>6. Your rights and deleting your data</h2>
@@ -86,16 +88,16 @@ export default function PrivacyPage() {
 
         <h2 id="cookies">8. Cookies</h2>
         <p>
-          We use strictly necessary cookies (for example, to remember your cookie choice and referral
-          code). Analytics (Google Analytics 4) and advertising (Meta Pixel) cookies are only loaded
-          if you click &quot;Accept all&quot;. You can change your choice any time via &quot;Cookie
-          Settings&quot; in the footer.
+          We use strictly necessary cookies (for example, to remember your cookie choice and
+          referral code). Analytics (Google Analytics 4) and advertising (Meta Pixel) cookies are
+          only loaded if you click &quot;Accept all&quot;. You can change your choice any time via
+          &quot;Cookie Settings&quot; in the footer.
         </p>
 
         <h2>9. Security</h2>
         <p>
-          Data is encrypted in transit and at rest. Photos are stored privately and accessed only via
-          short-lived links. Health information is never included in emails or URLs.
+          Data is encrypted in transit and at rest. Photos are stored privately and accessed only
+          via short-lived links. Health information is never included in emails or URLs.
         </p>
 
         <h2>10. Changes</h2>

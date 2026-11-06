@@ -30,9 +30,21 @@ export function NoteForm({ id }: { id: string }) {
 
   return (
     <form onSubmit={save} className="space-y-2">
-      <label htmlFor="note" className="sr-only">Add internal note</label>
-      <Textarea id="note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add an internal note…" />
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      <label htmlFor="note" className="sr-only">
+        Add internal note
+      </label>
+      <Textarea
+        id="note"
+        rows={3}
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Add an internal note…"
+      />
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
       <Button type="submit" variant="primary" size="sm" disabled={saving || !note.trim()}>
         {saving ? "Saving…" : "Add note"}
       </Button>

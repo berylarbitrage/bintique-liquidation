@@ -27,18 +27,20 @@ export function LoginForm({ next }: { next: string }) {
     if (res.ok) setState("sent");
     else {
       setState("error");
-      setError(res.status === 429 ? "Too many attempts. Please wait a minute." : "Something went wrong.");
+      setError(
+        res.status === 429 ? "Too many attempts. Please wait a minute." : "Something went wrong.",
+      );
     }
   };
 
   if (state === "sent") {
     return (
-      <div role="status" className="rounded-2xl bg-primary-soft p-6">
-        <MailCheck className="size-8 text-primary" aria-hidden />
+      <div role="status" className="bg-primary-soft rounded-2xl p-6">
+        <MailCheck className="text-primary size-8" aria-hidden />
         <p className="mt-3 font-semibold">Check your email</p>
-        <p className="text-sm text-muted">
-          If an account exists for {email}, we&apos;ve sent a secure sign-in link. It expires soon and
-          can only be used once.
+        <p className="text-muted text-sm">
+          If an account exists for {email}, we&apos;ve sent a secure sign-in link. It expires soon
+          and can only be used once.
         </p>
       </div>
     );

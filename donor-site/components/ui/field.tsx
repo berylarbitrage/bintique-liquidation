@@ -27,9 +27,9 @@ export function Field({
         {required && <span className="text-destructive"> *</span>}
       </Label>
       {children}
-      {hint && !error && <p className="text-xs text-muted">{hint}</p>}
+      {hint && !error && <p className="text-muted text-xs">{hint}</p>}
       {error && (
-        <p id={`${id}-error`} role="alert" className="text-sm text-destructive">
+        <p id={`${id}-error`} role="alert" className="text-destructive text-sm">
           {error}
         </p>
       )}

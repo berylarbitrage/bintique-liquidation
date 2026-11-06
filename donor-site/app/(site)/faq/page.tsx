@@ -9,7 +9,8 @@ import { faqJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
-  description: "Answers to common questions about egg donation, sperm donation, compensation, and privacy.",
+  description:
+    "Answers to common questions about egg donation, sperm donation, compensation, and privacy.",
   alternates: { canonical: "/faq" },
 };
 
@@ -20,13 +21,16 @@ export default function FaqPage() {
   return (
     <>
       <JsonLd data={faqJsonLd(all)} />
-      <Section title="Frequently Asked Questions" intro="Can't find your answer? Contact us any time.">
+      <Section
+        title="Frequently Asked Questions"
+        intro="Can't find your answer? Contact us any time."
+      >
         <nav aria-label="FAQ sections" className="mb-10 flex flex-wrap gap-2">
           {ORDER.map((g) => (
             <a
               key={g}
               href={`#${g}`}
-              className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-primary"
+              className="border-border bg-card hover:border-primary rounded-full border px-4 py-2 text-sm font-medium"
             >
               {FAQ[g].title}
             </a>

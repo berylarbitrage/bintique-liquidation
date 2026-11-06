@@ -8,9 +8,14 @@ const afterTasks: (() => Promise<void>)[] = [];
 const sent: { to: string; subject: string }[] = [];
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => db, PHOTO_BUCKET: "donor-photos" }));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => db,
+  PHOTO_BUCKET: "donor-photos",
+}));
 vi.mock("next/headers", () => ({
-  cookies: async () => ({ get: (k: string) => (cookieJar.has(k) ? { value: cookieJar.get(k) } : undefined) }),
+  cookies: async () => ({
+    get: (k: string) => (cookieJar.has(k) ? { value: cookieJar.get(k) } : undefined),
+  }),
 }));
 vi.mock("next/server", async (orig) => ({
   ...(await orig<typeof import("next/server")>()),
@@ -88,7 +93,12 @@ describe("POST /api/apply", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, eligible: true });
     expect(apps()).toHaveLength(1);
-    expect(apps()[0]).toMatchObject({ eligible: true, phone: "3125550199", height_in: 66, smoker: false });
+    expect(apps()[0]).toMatchObject({
+      eligible: true,
+      phone: "3125550199",
+      height_in: 66,
+      smoker: false,
+    });
     for (const t of afterTasks) await t();
     expect(apps()[0]).toMatchObject({ user_id: "user-1", status: "full_app_pending" });
     expect(sent.map((s) => s.to)).toEqual(["jane@example.com", "admin@example.com"]);
@@ -123,7 +133,9 @@ describe("POST /api/apply", () => {
     const first = await POST(req({ donorType: "egg", data: eggData() }));
     expect(first.status).toBe(200);
     // Different IP, different casing — still the same person.
-    const second = await POST(req({ donorType: "egg", data: eggData({ email: "JANE@Example.com" }) }));
+    const second = await POST(
+      req({ donorType: "egg", data: eggData({ email: "JANE@Example.com" }) }),
+    );
     expect(second.status).toBe(409);
     expect((await second.json()).code).toBe("duplicate");
     expect(apps()).toHaveLength(1);
@@ -131,17 +143,26 @@ describe("POST /api/apply", () => {
 
   it("allows resubmission after 24 hours", async () => {
     db.tables.applications = [
-      { id: "old", email: "jane@example.com", created_at: new Date(Date.now() - 25 * 3600e3).toISOString() },
+      {
+        id: "old",
+        email: "jane@example.com",
+        created_at: new Date(Date.now() - 25 * 3600e3).toISOString(),
+      },
     ];
     const res = await POST(req({ donorType: "egg", data: eggData() }));
     expect(res.status).toBe(200);
   });
 
   it("validates with the shared zod schema", async () => {
-    const res = await POST(req({ donorType: "egg", data: eggData({ zip: "123", privacyConsent: false }) }));
+    const res = await POST(
+      req({ donorType: "egg", data: eggData({ zip: "123", privacyConsent: false }) }),
+    );
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.issues.map((i: { path: string }) => i.path).sort()).toEqual(["privacyConsent", "zip"]);
+    expect(body.issues.map((i: { path: string }) => i.path).sort()).toEqual([
+      "privacyConsent",
+      "zip",
+    ]);
   });
 
   it("silently drops honeypot submissions", async () => {
@@ -163,7 +184,9 @@ describe("POST /api/apply", () => {
 
   it("ignores unknown codes and self-referrals", async () => {
     await POST(req({ donorType: "egg", data: eggData({ ref: "ZZZZ9999" }) }));
-    await POST(req({ donorType: "egg", data: eggData({ email: "ref@example.com", ref: "ABCD1234" }) }));
+    await POST(
+      req({ donorType: "egg", data: eggData({ email: "ref@example.com", ref: "ABCD1234" }) }),
+    );
     expect(apps().map((a) => a.referral_code)).toEqual([null, null]);
   });
 

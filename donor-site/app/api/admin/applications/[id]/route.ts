@@ -29,11 +29,18 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if (!body.ok) return body.res;
   const { supabase, user } = admin;
 
-  const { data: app } = await supabase.from("applications").select("id,status").eq("id", id).maybeSingle();
+  const { data: app } = await supabase
+    .from("applications")
+    .select("id,status")
+    .eq("id", id)
+    .maybeSingle();
   if (!app) return errorJson("Not found", 404);
 
   if (body.data.status && body.data.status !== app.status) {
-    const { error } = await supabase.from("applications").update({ status: body.data.status }).eq("id", id);
+    const { error } = await supabase
+      .from("applications")
+      .update({ status: body.data.status })
+      .eq("id", id);
     if (error) {
       log.error("admin status update failed", error);
       return errorJson("Update failed", 500);
@@ -68,7 +75,11 @@ export async function DELETE(req: Request, { params }: Ctx) {
   if (confirm !== "DELETE") return errorJson("Confirmation required", 400);
 
   const db = createAdminClient();
-  const { data: app } = await db.from("applications").select("id,email,donor_type").eq("id", id).maybeSingle();
+  const { data: app } = await db
+    .from("applications")
+    .select("id,email,donor_type")
+    .eq("id", id)
+    .maybeSingle();
   if (!app) return errorJson("Not found", 404);
 
   const { data: allApps } = await db.from("applications").select("id").eq("email", app.email);
@@ -96,13 +107,20 @@ export async function DELETE(req: Request, { params }: Ctx) {
   try {
     const userId = await findUserIdByEmail(app.email);
     if (userId && userId !== admin.user.id) {
-      const { data: profile } = await db.from("profiles").select("role").eq("id", userId).maybeSingle();
+      const { data: profile } = await db
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
       if (profile?.role !== "admin") await db.auth.admin.deleteUser(userId);
     }
   } catch (err) {
     log.error("delete: auth user removal failed", err);
   }
 
-  await audit(admin.user.id, "delete_applicant_data", id, { applications: appIds.length, donor_type: app.donor_type });
+  await audit(admin.user.id, "delete_applicant_data", id, {
+    applications: appIds.length,
+    donor_type: app.donor_type,
+  });
   return json({ ok: true });
 }

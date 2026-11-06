@@ -149,7 +149,11 @@ describe("evaluate: sperm", () => {
   it("height boundary is inclusive of the minimum", () => {
     const ft = Math.floor(r.minHeightInches / 12);
     const inch = r.minHeightInches % 12;
-    const at = evaluate("sperm", { ...spermBase, heightFt: ft, heightIn: inch, weightLb: 150 }, NOW);
+    const at = evaluate(
+      "sperm",
+      { ...spermBase, heightFt: ft, heightIn: inch, weightLb: 150 },
+      NOW,
+    );
     const below = evaluate(
       "sperm",
       { ...spermBase, heightFt: ft, heightIn: inch - 1, weightLb: 150 },
@@ -174,9 +178,9 @@ describe("evaluate: sperm", () => {
     expect(evaluate("sperm", { ...spermBase, education: "High school" }, NOW).reasons).toEqual([
       "education",
     ]);
-    expect(evaluate("sperm", { ...spermBase, education: "Currently in college" }, NOW).eligible).toBe(
-      true,
-    );
+    expect(
+      evaluate("sperm", { ...spermBase, education: "Currently in college" }, NOW).eligible,
+    ).toBe(true);
     expect(evaluate("sperm", { ...spermBase, education: "Bachelor's" }, NOW).eligible).toBe(true);
   });
 
@@ -185,7 +189,9 @@ describe("evaluate: sperm", () => {
   });
 
   it("requires living within 60 minutes", () => {
-    expect(evaluate("sperm", { ...spermBase, within60Min: "no" }, NOW).reasons).toEqual(["distance"]);
+    expect(evaluate("sperm", { ...spermBase, within60Min: "no" }, NOW).reasons).toEqual([
+      "distance",
+    ]);
   });
 
   it("requires a 6-month commitment", () => {

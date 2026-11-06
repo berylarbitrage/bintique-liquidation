@@ -4,7 +4,7 @@ import { SITE } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Become a Sperm Donor",
-  description: `Become a sperm donor and earn ${SITE.spermComp}. Free health and genetic screening. Apply online in about 3 minutes.`,
+  description: `Become a sperm donor. Compensation: ${SITE.spermComp}. Free health and genetic screening. Apply online in about 3 minutes.`,
   alternates: { canonical: "/sperm-donor" },
 };
 
@@ -16,7 +16,7 @@ export default function SpermDonorPage() {
         hero: {
           eyebrow: "Sperm donation",
           title: "Become a sperm donor. Help families grow.",
-          subtitle: `Earn ${SITE.spermComp} with a flexible weekly schedule, plus free health and genetic screening.`,
+          subtitle: `Compensation: ${SITE.spermComp}. Flexible weekly schedule, plus free health and genetic screening.`,
           image: "/images/hero-sperm.svg",
         },
         partnerNote: (
@@ -38,13 +38,31 @@ export default function SpermDonorPage() {
         },
         steps: [
           { title: "Pre-screen", body: "Answer a few basic questions online (about 3 minutes)." },
-          { title: "Full application", body: "Complete your profile and family health history in your secure portal." },
-          { title: "Coordinator call", body: "A short video call to answer your questions and confirm your schedule." },
-          { title: "Initial sample & analysis", body: "Provide a sample at a partner sperm bank for semen analysis." },
-          { title: "Medical & genetic screening", body: "Physical exam, infectious disease and genetic carrier testing by the partner bank." },
+          {
+            title: "Full application",
+            body: "Complete your profile and family health history in your secure portal.",
+          },
+          {
+            title: "Coordinator call",
+            body: "A short video call to answer your questions and confirm your schedule.",
+          },
+          {
+            title: "Initial sample & analysis",
+            body: "Provide a sample at a partner sperm bank for semen analysis.",
+          },
+          {
+            title: "Medical & genetic screening",
+            body: "Physical exam, infectious disease and genetic carrier testing by the partner bank.",
+          },
           { title: "Donor agreement", body: "Review and sign the donor agreement with the bank." },
-          { title: "Weekly donations (6+ months)", body: "Visit the bank one to two times per week, about 15–30 minutes per visit." },
-          { title: "Get compensated", body: "Compensation is paid on a regular schedule set by the program." },
+          {
+            title: "Weekly donations (6+ months)",
+            body: "Visit the bank one to two times per week, about 15–30 minutes per visit.",
+          },
+          {
+            title: "Get compensated",
+            body: "Compensation is paid on a regular schedule set by the program.",
+          },
         ],
         concerns: [
           {

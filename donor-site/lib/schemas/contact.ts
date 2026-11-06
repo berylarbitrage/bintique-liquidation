@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const CONTACT_TOPICS = ["Egg donation", "Sperm donation", "Referral program", "My application", "Other"] as const;
+export const CONTACT_TOPICS = [
+  "Egg donation",
+  "Sperm donation",
+  "Referral program",
+  "My application",
+  "Other",
+] as const;
 
 export const contactSchema = z.object({
   name: z.string().trim().min(1, "Please enter your name").max(100),

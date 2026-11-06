@@ -8,14 +8,20 @@ import AdminNewApplicationEmail from "@/emails/admin-new-application";
 describe("email templates", () => {
   it("eligible email contains the portal link", async () => {
     const html = await render(
-      createElement(EligibleEmail, { firstName: "Jane", donorType: "egg", portalUrl: "https://x.com/auth/confirm?t=1" }),
+      createElement(EligibleEmail, {
+        firstName: "Jane",
+        donorType: "egg",
+        portalUrl: "https://x.com/auth/confirm?t=1",
+      }),
     );
     expect(html).toMatch(/Great news, (<!-- -->)?Jane/);
     expect(html).toContain("https://x.com/auth/confirm?t=1");
   });
 
   it("ineligible email contains the referral link", async () => {
-    const html = await render(createElement(IneligibleEmail, { firstName: "Jane", referUrl: "https://x.com/refer" }));
+    const html = await render(
+      createElement(IneligibleEmail, { firstName: "Jane", referUrl: "https://x.com/refer" }),
+    );
     expect(html).toContain("https://x.com/refer");
   });
 
@@ -32,6 +38,8 @@ describe("email templates", () => {
     expect(text).toContain("Jane Doe");
     expect(text).toContain("sperm");
     expect(text).toMatch(/Pre-qualified:\s*No/);
-    expect(text).not.toMatch(/\b(bmi|weight|height|smok\w*|cycles?|birth control|date of birth)\b/i);
+    expect(text).not.toMatch(
+      /\b(bmi|weight|height|smok\w*|cycles?|birth control|date of birth)\b/i,
+    );
   });
 });

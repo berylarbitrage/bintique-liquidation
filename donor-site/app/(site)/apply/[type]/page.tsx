@@ -9,7 +9,11 @@ export function generateStaticParams() {
 }
 export const dynamicParams = false;
 
-export async function generateMetadata({ params }: { params: Promise<{ type: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ type: string }>;
+}): Promise<Metadata> {
   const { type } = await params;
   return {
     title: type === "egg" ? "Egg Donor Pre-Screen" : "Sperm Donor Pre-Screen",
@@ -22,10 +26,12 @@ export default async function ApplyPage({ params }: { params: Promise<{ type: st
   if (!isDonorType(type)) notFound();
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 md:py-14">
-      <p className="text-sm font-semibold text-primary">
+      <p className="text-primary text-sm font-semibold">
         {type === "egg" ? "Egg donor" : "Sperm donor"} application
       </p>
-      <h1 className="mt-1 mb-6 text-3xl font-semibold md:text-4xl">Let&apos;s see if you pre-qualify</h1>
+      <h1 className="mt-1 mb-6 text-3xl font-semibold md:text-4xl">
+        Let&apos;s see if you pre-qualify
+      </h1>
       <PrescreenForm type={type} turnstileSiteKey={env("TURNSTILE_SITE_KEY")} />
     </div>
   );

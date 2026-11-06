@@ -21,16 +21,23 @@ export default function ReferPage() {
         <div>
           <h2 className="font-sans text-lg font-semibold">How it works</h2>
           <ol className="mt-4 space-y-3">
-            <li><strong>1.</strong> Enter your name and email to get your unique link.</li>
-            <li><strong>2.</strong> Share it with friends who might be interested in donating.</li>
-            <li><strong>3.</strong> When they apply through your link, we&apos;ll record the referral automatically.</li>
             <li>
-              <strong>4.</strong> You receive <strong>{SITE.referralBonus}</strong> after your referral
-              completes a donation.
+              <strong>1.</strong> Enter your name and email to get your unique link.
+            </li>
+            <li>
+              <strong>2.</strong> Share it with friends who might be interested in donating.
+            </li>
+            <li>
+              <strong>3.</strong> When they apply through your link, we&apos;ll record the referral
+              automatically.
+            </li>
+            <li>
+              <strong>4.</strong> You receive <strong>{SITE.referralBonus}</strong> after your
+              referral completes a donation.
             </li>
           </ol>
           <h2 className="mt-8 font-sans text-lg font-semibold">The fine print</h2>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted">
+          <ul className="text-muted mt-3 list-disc space-y-2 pl-5 text-sm">
             <li>The bonus is paid only after the referred donor completes a donation.</li>
             <li>Referrals are tracked for 30 days after your friend clicks your link.</li>
             <li>Self-referrals are not eligible.</li>

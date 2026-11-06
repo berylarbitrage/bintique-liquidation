@@ -12,7 +12,8 @@ export async function POST(req: Request) {
   const body = await parseBody(req, referSchema);
   if (!body.ok) return body.res;
   const { name, email, website } = body.data;
-  if (website) return json({ code: generateRefCode(), links: referralLinks("XXXXXXXX", siteUrl()) });
+  if (website)
+    return json({ code: generateRefCode(), links: referralLinks("XXXXXXXX", siteUrl()) });
   if (!isSupabaseConfigured()) return errorJson("Referrals are temporarily unavailable.", 503);
 
   const db = createAdminClient();

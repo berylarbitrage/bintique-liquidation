@@ -45,13 +45,13 @@ export function DonorLanding({ c }: { c: DonorLandingContent }) {
 
       {c.partnerNote && (
         <div className="mx-auto max-w-6xl px-4">
-          <p className="rounded-xl bg-primary-soft p-4 text-sm">{c.partnerNote}</p>
+          <p className="bg-primary-soft rounded-xl p-4 text-sm">{c.partnerNote}</p>
         </div>
       )}
 
       <Section id="requirements" eyebrow="Requirements" title="Who can apply">
         <CheckList items={requirementsList(c.type)} />
-        <p className="mt-4 text-sm text-muted">
+        <p className="text-muted mt-4 text-sm">
           These are initial guidelines. Final eligibility is determined by our partner medical
           providers.
         </p>
@@ -61,19 +61,21 @@ export function DonorLanding({ c }: { c: DonorLandingContent }) {
         <Section eyebrow="Compensation" title="Compensation & covered costs">
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
-              <p className="text-sm font-semibold text-primary">Compensation</p>
+              <p className="text-primary text-sm font-semibold">Compensation</p>
               <p className="mt-2 font-serif text-3xl font-semibold">{c.comp.amount}</p>
-              <p className="mt-3 text-sm text-muted">
+              <p className="text-muted mt-3 text-sm">
                 {c.comp.note ??
                   "Paid for your time, effort, and commitment. Amounts vary by program."}
               </p>
             </Card>
             <Card>
-              <p className="text-sm font-semibold text-primary">Covered at no cost to you</p>
+              <p className="text-primary text-sm font-semibold">Covered at no cost to you</p>
               <ul className="mt-3 space-y-2">
                 {c.comp.covered.map((x) => (
                   <li key={x} className="flex gap-2">
-                    <span aria-hidden className="text-accent">●</span>
+                    <span aria-hidden className="text-accent">
+                      ●
+                    </span>
                     {x}
                   </li>
                 ))}
@@ -99,7 +101,7 @@ export function DonorLanding({ c }: { c: DonorLandingContent }) {
             {c.concerns.map((x) => (
               <Card key={x.title}>
                 <h3 className="font-sans text-lg font-semibold">{x.title}</h3>
-                <p className="mt-2 text-muted">{x.body}</p>
+                <p className="text-muted mt-2">{x.body}</p>
               </Card>
             ))}
           </div>
@@ -112,7 +114,7 @@ export function DonorLanding({ c }: { c: DonorLandingContent }) {
 
       <section className="mx-auto max-w-6xl px-4 pb-10 text-center">
         <h2 className="text-3xl font-semibold">Ready to take the first step?</h2>
-        <p className="mt-3 text-muted">The pre-screen takes about 3 minutes.</p>
+        <p className="text-muted mt-3">The pre-screen takes about 3 minutes.</p>
         <Button asChild size="lg" className="mt-6">
           <Link href={applyHref}>Start Your Application</Link>
         </Button>

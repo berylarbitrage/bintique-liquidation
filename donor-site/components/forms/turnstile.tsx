@@ -13,7 +13,13 @@ declare global {
 }
 
 /** Cloudflare Turnstile widget. Renders nothing if no site key is configured. */
-export function Turnstile({ siteKey, onToken }: { siteKey?: string; onToken: (t: string) => void }) {
+export function Turnstile({
+  siteKey,
+  onToken,
+}: {
+  siteKey?: string;
+  onToken: (t: string) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const idRef = useRef<string | null>(null);
   const cb = useRef(onToken);
