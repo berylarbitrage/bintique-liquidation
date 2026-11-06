@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" role="img" aria-label="Abstract illustration of flowing lines">
+  <rect width="480" height="400" rx="32" fill="#E3EFED"/>
+  <path d="M40 260 C 140 140, 240 360, 440 160" stroke="#1F5F5B" stroke-width="22" fill="none" stroke-linecap="round"/>
+  <path d="M40 320 C 160 220, 260 400, 440 230" stroke="#E8846B" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="360" cy="100" r="48" fill="#1F5F5B" opacity="0.85"/>
+  <circle cx="120" cy="100" r="22" fill="#E8846B"/>
+</svg>

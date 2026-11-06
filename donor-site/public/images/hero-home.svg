@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" role="img" aria-label="Abstract illustration of interlocking shapes">
+  <rect width="480" height="400" rx="32" fill="#E3EFED"/>
+  <circle cx="170" cy="190" r="120" fill="#1F5F5B" opacity="0.9"/>
+  <circle cx="300" cy="220" r="105" fill="#E8846B" opacity="0.85"/>
+  <circle cx="250" cy="150" r="46" fill="#FBF8F4"/>
+  <path d="M60 340 C 160 290, 320 380, 430 320" stroke="#1F5F5B" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <circle cx="390" cy="80" r="22" fill="#F4C9A8"/>
+  <circle cx="90" cy="70" r="12" fill="#E8846B"/>
+</svg>

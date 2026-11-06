@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Brand tokens (light). Dark values below. */
+:root {
+  --primary: #1f5f5b;
+  --primary-foreground: #ffffff;
+  --accent: #e8846b;
+  --accent-foreground: #2a1410;
+  --background: #fbf8f4;
+  --foreground: #1e2422;
+  --muted: #5f6864; /* spec #6B7470, darkened slightly to meet WCAG AA on #FBF8F4 */
+  --muted-bg: #f2ede6;
+  --card: #ffffff;
+  --border: #e5ded4;
+  --ring: #1f5f5b;
+  --destructive: #b42318;
+  --primary-soft: #e3efed;
+  --accent-soft: #fbe7e1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --primary: #6fb5ae;
+    --primary-foreground: #0f1f1d;
+    --accent: #f09a83;
+    --accent-foreground: #2a1410;
+    --background: #141917;
+    --foreground: #eef1ef;
+    --muted: #a7b0ac;
+    --muted-bg: #1d2421;
+    --card: #1a201e;
+    --border: #2e3734;
+    --ring: #6fb5ae;
+    --destructive: #f97066;
+    --primary-soft: #1d2f2d;
+    --accent-soft: #3a2420;
+  }
+}
+
+.dark {
+  --primary: #6fb5ae;
+  --primary-foreground: #0f1f1d;
+  --accent: #f09a83;
+  --accent-foreground: #2a1410;
+  --background: #141917;
+  --foreground: #eef1ef;
+  --muted: #a7b0ac;
+  --muted-bg: #1d2421;
+  --card: #1a201e;
+  --border: #2e3734;
+  --ring: #6fb5ae;
+  --destructive: #f97066;
+  --primary-soft: #1d2f2d;
+  --accent-soft: #3a2420;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-bg: var(--muted-bg);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    overflow-x: hidden;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+.prose-legal h2 {
+  @apply mt-8 mb-3 text-xl font-semibold;
+}
+.prose-legal p,
+.prose-legal li {
+  @apply mb-3 leading-relaxed;
+}
+.prose-legal ul {
+  @apply list-disc pl-6;
+}

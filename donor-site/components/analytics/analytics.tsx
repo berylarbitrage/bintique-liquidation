@@ -1,0 +1,47 @@
+"use client";
+
+import Script from "next/script";
+import { useEffect, useState } from "react";
+import { CONSENT_EVENT, readConsent, type Consent } from "@/lib/consent";
+
+/** Loads GA4 + Meta Pixel only after the visitor grants consent. */
+export function Analytics() {
+  const [consent, setConsent] = useState<Consent | null>(null);
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+
+  useEffect(() => {
+    setConsent(readConsent());
+    const onChange = (e: Event) => {
+      const value = (e as CustomEvent<Consent>).detail;
+      setConsent(value);
+      // Revoking consent requires a reload to unload third-party scripts.
+      if (value === "denied" && (window.gtag || window.fbq)) window.location.reload();
+    };
+    window.addEventListener(CONSENT_EVENT, onChange);
+    return () => window.removeEventListener(CONSENT_EVENT, onChange);
+  }, []);
+
+  if (consent !== "granted") return null;
+
+  return (
+    <>
+      {gaId && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga4" strategy="afterInteractive">
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config',${JSON.stringify(gaId)},{anonymize_ip:true});`}
+          </Script>
+        </>
+      )}
+      {pixelId && (
+        <Script id="meta-pixel" strategy="afterInteractive">
+          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',${JSON.stringify(pixelId)});fbq('track','PageView');`}
+        </Script>
+      )}
+    </>
+  );
+}

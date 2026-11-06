@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" role="img" aria-label="Abstract illustration of soft round shapes">
+  <rect width="480" height="400" rx="32" fill="#FBE7E1"/>
+  <ellipse cx="240" cy="210" rx="150" ry="140" fill="#E8846B" opacity="0.85"/>
+  <circle cx="240" cy="210" r="78" fill="#FBF8F4"/>
+  <circle cx="240" cy="210" r="34" fill="#1F5F5B"/>
+  <circle cx="400" cy="90" r="26" fill="#1F5F5B" opacity="0.6"/>
+  <circle cx="80" cy="330" r="18" fill="#1F5F5B" opacity="0.4"/>
+</svg>
