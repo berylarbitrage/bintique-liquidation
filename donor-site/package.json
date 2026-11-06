@@ -11,7 +11,9 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:rls": "vitest run --config vitest.rls.config.mts"
+    "test:rls": "vitest run --config vitest.rls.config.mts",
+    "email:test": "tsx --env-file-if-exists=.env.local scripts/send-test-emails.tsx",
+    "test:rls:sql": "scripts/test-rls-sql.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.3",
@@ -44,6 +46,7 @@
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4.3.4",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0"
   },

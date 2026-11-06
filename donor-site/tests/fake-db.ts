@@ -65,6 +65,22 @@ class Query implements PromiseLike<{ data: unknown; error: null; count?: number 
     this.isSingle = true;
     return this;
   }
+  in(col: string, vals: unknown[]) {
+    this.filters.push((r) => vals.includes(r[col]));
+    return this;
+  }
+  or(_f: string) {
+    return this;
+  }
+  order(_c: string, _o?: unknown) {
+    return this;
+  }
+  range(_a: number, _b: number) {
+    return this;
+  }
+  limit(_n: number) {
+    return this;
+  }
   maybeSingle() {
     this.maybe = true;
     return this;
@@ -93,7 +109,7 @@ class Query implements PromiseLike<{ data: unknown; error: null; count?: number 
       this.db.tables[this.table] = rows.filter((r) => !match(r));
       return { data: null, error: null };
     }
-    const found = rows.filter(match);
+    const found = rows.filter(match).map((r) => structuredClone(r));
     if (this.head) return { data: null, error: null, count: found.length };
     if (this.isSingle || this.maybe) return { data: found[0] ?? null, error: null };
     return { data: found, error: null };
