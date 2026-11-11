@@ -296,6 +296,8 @@ CREATE TABLE IF NOT EXISTS truck_bill_orders (
 `);
 try { db.exec('ALTER TABLE truck_bills ADD COLUMN truck_quote_id INTEGER'); } catch (e) {}
 try { db.exec('ALTER TABLE truck_bills ADD COLUMN size TEXT'); } catch (e) {}
+// 对方 Invoice 上的金额, 用来和我们记的卡车单金额核对 (空 = 还没收到/没填)
+try { db.exec('ALTER TABLE truck_bills ADD COLUMN invoice_amount REAL'); } catch (e) {}
 // 发票抬头 (卖方公司) 每张发票自己选; 不显示抬头的发票打印时不出公司信息
 try { db.exec('ALTER TABLE invoices ADD COLUMN seller_key TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE invoices ADD COLUMN hide_header INTEGER DEFAULT 0'); } catch (e) {}
@@ -464,12 +466,25 @@ function orderValues(b, type) {
   };
 }
 
+// 订单弹窗里关联卡车单 (卡车 invoice): 只在传了 truck_bill_ids 数组时才改
+function setOrderTrucks(req, orderId, ids) {
+  if (!Array.isArray(ids)) return;
+  const want = [...new Set(ids.map(Number).filter(Boolean))].filter(id => db.prepare('SELECT 1 FROM truck_bills WHERE id = ?').get(id));
+  const have = db.prepare('SELECT bill_id FROM truck_bill_orders WHERE order_id = ?').all(orderId).map(r => r.bill_id);
+  const add = want.filter(id => !have.includes(id)), del = have.filter(id => !want.includes(id));
+  if (!add.length && !del.length) return;
+  db.transaction(() => {
+    for (const id of del) db.prepare('DELETE FROM truck_bill_orders WHERE bill_id = ? AND order_id = ?').run(id, orderId);
+    for (const id of add) db.prepare('INSERT OR IGNORE INTO truck_bill_orders (bill_id, order_id) VALUES (?, ?)').run(id, orderId);
+  })();
+  audit(req, 'orders', orderId, 'trucks', { linked: add, unlinked: del });
+}
 app.get('/api/orders', auth, (req, res) => res.json(loadOrders()));
 app.get('/api/orders/:id', auth, (req, res) => {
   const o = loadOrders('WHERE o.id = ?', [req.params.id])[0];
   if (!o) return res.status(404).json({ error: 'Not found' });
   o.history = db.prepare("SELECT * FROM audit_log WHERE entity = 'orders' AND entity_id = ? ORDER BY id DESC").all(o.id);
-  o.truck_bills = db.prepare(`SELECT b.id, b.bill_no, b.truck_company, b.amount,
+  o.truck_bills = db.prepare(`SELECT b.id, b.bill_no, b.truck_company, b.amount, b.invoice_no, b.invoice_amount, b.date_start, b.status,
       (SELECT COUNT(*) FROM truck_bill_orders x WHERE x.bill_id = b.id) AS order_count
     FROM truck_bill_orders bo JOIN truck_bills b ON b.id = bo.bill_id WHERE bo.order_id = ? ORDER BY b.id`).all(o.id);
   res.json(o);
@@ -484,6 +499,7 @@ app.post('/api/orders', auth, (req, res) => {
   const keys = Object.keys(v);
   const r = db.prepare(`INSERT INTO orders (${keys.join(',')}) VALUES (${keys.map(k => '@' + k).join(',')})`).run(v);
   audit(req, 'orders', r.lastInsertRowid, 'create', v);
+  setOrderTrucks(req, r.lastInsertRowid, b.truck_bill_ids);
   res.json(loadOrders('WHERE o.id = ?', [r.lastInsertRowid])[0]);
 });
 app.put('/api/orders/:id', auth, (req, res) => {
@@ -501,6 +517,7 @@ app.put('/api/orders/:id', auth, (req, res) => {
   const changes = {};
   for (const k of keys) if (String(old[k] ?? '') !== String(v[k] ?? '')) changes[k] = [old[k], v[k]];
   if (Object.keys(changes).length) audit(req, 'orders', old.id, 'update', changes);
+  setOrderTrucks(req, old.id, (req.body || {}).truck_bill_ids);
   res.json(loadOrders('WHERE o.id = ?', [old.id])[0]);
 });
 app.delete('/api/orders/:id', auth, adminOnly, (req, res) => {
@@ -643,7 +660,7 @@ function billValues(b) {
     truck_company: str(b.truck_company), state: str(b.state) && str(b.state).toUpperCase(), size: str(b.size),
     purpose: ['pickup', 'delivery', 'other'].includes(b.purpose) ? b.purpose : 'pickup',
     date_start: str(b.date_start), date_end: str(b.date_end), amount: num(b.amount),
-    invoice_no: str(b.invoice_no), payment_method: str(b.payment_method), paid_by: str(b.paid_by),
+    invoice_no: str(b.invoice_no), invoice_amount: str(b.invoice_amount) === null ? null : round2(num(b.invoice_amount)), payment_method: str(b.payment_method), paid_by: str(b.paid_by),
     status, paid_date: status === 'paid' ? (str(b.paid_date) || today()) : null,
     truck_quote_id: b.truck_quote_id ? +b.truck_quote_id : null, notes: str(b.notes),
   };
