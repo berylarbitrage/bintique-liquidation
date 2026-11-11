@@ -296,24 +296,6 @@ CREATE TABLE IF NOT EXISTS truck_bill_orders (
 `);
 try { db.exec('ALTER TABLE truck_bills ADD COLUMN truck_quote_id INTEGER'); } catch (e) {}
 try { db.exec('ALTER TABLE truck_bills ADD COLUMN size TEXT'); } catch (e) {}
-// 对方 Invoice 上的金额, 用来和我们记的卡车单金额核对 (空 = 还没收到/没填)
-try { db.exec('ALTER TABLE truck_bills ADD COLUMN invoice_amount REAL'); } catch (e) {}
-// Invoice / 账期: 一张卡车单可以有多张对方发票 (每张自己的账期/金额); 同一个发票号也可以挂在多张卡车单上
-// invoice_mode: '' 未收到 / full 全部 (一张发票覆盖整个租期) / partial 部分 (按账期分几张)
-try { db.exec('ALTER TABLE truck_bills ADD COLUMN invoice_mode TEXT'); } catch (e) {}
-db.exec(`CREATE TABLE IF NOT EXISTS truck_bill_invoices (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  bill_id INTEGER NOT NULL REFERENCES truck_bills(id) ON DELETE CASCADE,
-  invoice_no TEXT, period_start TEXT, period_end TEXT, amount REAL,
-  sort INTEGER DEFAULT 0
-)`);
-// 旧数据: 只有一个 对方 Invoice # / 金额 → 变成一张「全部」发票
-for (const b of db.prepare(`SELECT * FROM truck_bills WHERE (invoice_no IS NOT NULL OR invoice_amount IS NOT NULL)
-    AND id NOT IN (SELECT bill_id FROM truck_bill_invoices) AND invoice_mode IS NULL`).all()) {
-  db.prepare('INSERT INTO truck_bill_invoices (bill_id, invoice_no, period_start, period_end, amount) VALUES (?,?,?,?,?)')
-    .run(b.id, b.invoice_no, b.date_start, b.date_end, b.invoice_amount);
-  db.prepare("UPDATE truck_bills SET invoice_mode = 'full' WHERE id = ?").run(b.id);
-}
 // 发票抬头 (卖方公司) 每张发票自己选; 不显示抬头的发票打印时不出公司信息
 try { db.exec('ALTER TABLE invoices ADD COLUMN seller_key TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE invoices ADD COLUMN hide_header INTEGER DEFAULT 0'); } catch (e) {}
@@ -482,25 +464,12 @@ function orderValues(b, type) {
   };
 }
 
-// 订单弹窗里关联卡车单 (卡车 invoice): 只在传了 truck_bill_ids 数组时才改
-function setOrderTrucks(req, orderId, ids) {
-  if (!Array.isArray(ids)) return;
-  const want = [...new Set(ids.map(Number).filter(Boolean))].filter(id => db.prepare('SELECT 1 FROM truck_bills WHERE id = ?').get(id));
-  const have = db.prepare('SELECT bill_id FROM truck_bill_orders WHERE order_id = ?').all(orderId).map(r => r.bill_id);
-  const add = want.filter(id => !have.includes(id)), del = have.filter(id => !want.includes(id));
-  if (!add.length && !del.length) return;
-  db.transaction(() => {
-    for (const id of del) db.prepare('DELETE FROM truck_bill_orders WHERE bill_id = ? AND order_id = ?').run(id, orderId);
-    for (const id of add) db.prepare('INSERT OR IGNORE INTO truck_bill_orders (bill_id, order_id) VALUES (?, ?)').run(id, orderId);
-  })();
-  audit(req, 'orders', orderId, 'trucks', { linked: add, unlinked: del });
-}
 app.get('/api/orders', auth, (req, res) => res.json(loadOrders()));
 app.get('/api/orders/:id', auth, (req, res) => {
   const o = loadOrders('WHERE o.id = ?', [req.params.id])[0];
   if (!o) return res.status(404).json({ error: 'Not found' });
   o.history = db.prepare("SELECT * FROM audit_log WHERE entity = 'orders' AND entity_id = ? ORDER BY id DESC").all(o.id);
-  o.truck_bills = db.prepare(`SELECT b.id, b.bill_no, b.truck_company, b.amount, b.invoice_no, b.invoice_amount, b.invoice_mode, b.date_start, b.status,
+  o.truck_bills = db.prepare(`SELECT b.id, b.bill_no, b.truck_company, b.amount,
       (SELECT COUNT(*) FROM truck_bill_orders x WHERE x.bill_id = b.id) AS order_count
     FROM truck_bill_orders bo JOIN truck_bills b ON b.id = bo.bill_id WHERE bo.order_id = ? ORDER BY b.id`).all(o.id);
   res.json(o);
@@ -515,7 +484,6 @@ app.post('/api/orders', auth, (req, res) => {
   const keys = Object.keys(v);
   const r = db.prepare(`INSERT INTO orders (${keys.join(',')}) VALUES (${keys.map(k => '@' + k).join(',')})`).run(v);
   audit(req, 'orders', r.lastInsertRowid, 'create', v);
-  setOrderTrucks(req, r.lastInsertRowid, b.truck_bill_ids);
   res.json(loadOrders('WHERE o.id = ?', [r.lastInsertRowid])[0]);
 });
 app.put('/api/orders/:id', auth, (req, res) => {
@@ -533,7 +501,6 @@ app.put('/api/orders/:id', auth, (req, res) => {
   const changes = {};
   for (const k of keys) if (String(old[k] ?? '') !== String(v[k] ?? '')) changes[k] = [old[k], v[k]];
   if (Object.keys(changes).length) audit(req, 'orders', old.id, 'update', changes);
-  setOrderTrucks(req, old.id, (req.body || {}).truck_bill_ids);
   res.json(loadOrders('WHERE o.id = ?', [old.id])[0]);
 });
 app.delete('/api/orders/:id', auth, adminOnly, (req, res) => {
@@ -676,31 +643,16 @@ function billValues(b) {
     truck_company: str(b.truck_company), state: str(b.state) && str(b.state).toUpperCase(), size: str(b.size),
     purpose: ['pickup', 'delivery', 'other'].includes(b.purpose) ? b.purpose : 'pickup',
     date_start: str(b.date_start), date_end: str(b.date_end), amount: num(b.amount),
-    invoice_mode: ['full', 'partial'].includes(b.invoice_mode) ? b.invoice_mode : null, payment_method: str(b.payment_method), paid_by: str(b.paid_by),
+    invoice_no: str(b.invoice_no), payment_method: str(b.payment_method), paid_by: str(b.paid_by),
     status, paid_date: status === 'paid' ? (str(b.paid_date) || today()) : null,
     truck_quote_id: b.truck_quote_id ? +b.truck_quote_id : null, notes: str(b.notes),
   };
 }
-const BILL_SELECT = `SELECT b.*, q.quote_no, q.price AS quote_price, q.price_unit AS quote_unit,
-  (SELECT json_group_array(json_object('id', i.id, 'invoice_no', i.invoice_no, 'period_start', i.period_start, 'period_end', i.period_end, 'amount', i.amount))
-     FROM (SELECT * FROM truck_bill_invoices WHERE bill_id = b.id ORDER BY sort, id) i) AS invoices_json,
+const BILL_SELECT = `SELECT b.*, q.quote_no,
   (SELECT json_group_array(json_object('id', o.id, 'order_no', o.order_no, 'order_type', o.order_type, 'title', o.title))
      FROM truck_bill_orders bo JOIN orders o ON o.id = bo.order_id WHERE bo.bill_id = b.id) AS orders_json
   FROM truck_bills b LEFT JOIN truck_quotes q ON q.id = b.truck_quote_id`;
-const billOut = b => b && ({ ...b, orders: JSON.parse(b.orders_json || '[]'), receipts: JSON.parse(b.receipts || '[]'), invoices: JSON.parse(b.invoices_json || '[]'),
-  orders_json: undefined, invoices_json: undefined });
-// 保存发票行; invoice_no / invoice_amount 是汇总 (搜索/列表/订单里显示用)
-const setBillInvoices = db.transaction((billId, mode, list) => {
-  db.prepare('DELETE FROM truck_bill_invoices WHERE bill_id = ?').run(billId);
-  const rows = mode ? (list || []).map(x => ({ invoice_no: str(x.invoice_no), period_start: str(x.period_start), period_end: str(x.period_end),
-    amount: str(x.amount) === null ? null : round2(num(x.amount)) })).filter(x => x.invoice_no || x.amount !== null) : [];
-  if (mode === 'full') rows.splice(1);
-  const ins = db.prepare('INSERT INTO truck_bill_invoices (bill_id, invoice_no, period_start, period_end, amount, sort) VALUES (?,?,?,?,?,?)');
-  rows.forEach((x, i) => ins.run(billId, x.invoice_no, x.period_start, x.period_end, x.amount, i));
-  const amts = rows.filter(x => x.amount !== null);
-  db.prepare('UPDATE truck_bills SET invoice_no = ?, invoice_amount = ? WHERE id = ?').run(
-    [...new Set(rows.map(x => x.invoice_no).filter(Boolean))].join(', ') || null, amts.length ? round2(amts.reduce((a, x) => a + x.amount, 0)) : null, billId);
-});
+const billOut = b => b && ({ ...b, orders: JSON.parse(b.orders_json || '[]'), receipts: JSON.parse(b.receipts || '[]'), orders_json: undefined });
 const setBillOrders = db.transaction((billId, ids) => {
   db.prepare('DELETE FROM truck_bill_orders WHERE bill_id = ?').run(billId);
   const ins = db.prepare('INSERT OR IGNORE INTO truck_bill_orders (bill_id, order_id) VALUES (?, ?)');
@@ -721,8 +673,7 @@ function saveBill(req, res, old) {
     id = db.prepare(`INSERT INTO truck_bills (${Object.keys(v).join(',')}) VALUES (${Object.keys(v).map(k => '@' + k).join(',')})`).run(v).lastInsertRowid;
   }
   if (Array.isArray(b.order_ids)) setBillOrders(id, b.order_ids);
-  if (Array.isArray(b.invoices)) setBillInvoices(id, v.invoice_mode, b.invoices);
-  audit(req, 'truck_bills', id, old ? 'update' : 'create', { ...v, order_ids: b.order_ids, invoices: b.invoices });
+  audit(req, 'truck_bills', id, old ? 'update' : 'create', { ...v, order_ids: b.order_ids });
   res.json(billOut(db.prepare(BILL_SELECT + ' WHERE b.id = ?').get(id)));
 }
 app.post('/api/truck-bills', auth, (req, res) => saveBill(req, res, null));
@@ -862,7 +813,6 @@ app.get('/api/backup', auth, adminOnly, (req, res) => {
     checkout_groups: db.prepare('SELECT * FROM checkout_groups').all(),
     truck_bills: db.prepare('SELECT * FROM truck_bills').all(),
     truck_bill_orders: db.prepare('SELECT * FROM truck_bill_orders').all(),
-    truck_bill_invoices: db.prepare('SELECT * FROM truck_bill_invoices').all(),
     truck_quotes: db.prepare('SELECT * FROM truck_quotes').all(),
     settings: db.prepare('SELECT * FROM settings').all(),
     legacy_lots: db.prepare('SELECT * FROM lots').all(),
