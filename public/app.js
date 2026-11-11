@@ -38,6 +38,11 @@ const I18N = {
     trucks_add: '+ Add Rental', new_truck: '新建卡车订单', edit_truck: '编辑卡车订单', th_bill: '单号', th_dates: '用车日期', th_purpose: '用途', th_linked: '关联订单', th_paid_by: '付款人', th_their_inv: '对方 Invoice',
     tp_pickup: '提货', tp_delivery: '送货', tp_other: '其他', tb_unpaid: '待处理', tb_paid: '已完成', all_companies: '全部卡车公司', all_purposes: '全部用途',
     f_truck_co: '卡车公司', f_state: '州', f_size: '尺寸', f_date_start: '开始日期', f_date_end: '结束日期', f_amount: '金额', f_purpose: '用途', f_tb_status: '状态', f_paid_date: '付款日期', f_tb_method: '付款方式', f_paid_by: '付款人', f_their_inv: '对方 Invoice #',
+    sec_inv: 'Invoice / 账期', im_none: '未收到 Not received', im_full: '全部 Full', im_partial: '部分 Partial', inv_no_ph: '对方发票号 Invoice #', inv_amt_ph: '这张金额',
+    inv_add: '+ 再加一张发票（各自账期/金额）', inv_check: '与系统发票自动核对', inv_click: '点发票号看明细', days: '天', inv_total: '发票合计', inv_open: '还差', inv_uncovered: '未开账期',
+    inv_expect: '应收', inv_outside: '账期超出租车日期', inv_overlap: '账期和其他发票重叠', inv_bad_period: '结束早于开始', inv_also: '同一张发票也挂在', inv_detail: '发票明细', rc_open: '部分已开',
+    f_inv_amount: '对方 Invoice 金额', use_inv_amount: '用 Invoice 金额', rc_ok: '金额一致', rc_diff: '金额不符', rc_none: '未填 Invoice 金额', rc_diff_by: '差', rc_booked: '记账', rc_quote: '报价',
+    sec_trucks: '卡车 Invoice (卡车费平摊进成本)', link_truck: '+ 关联卡车单 / Invoice…', truck_none: '还没关联卡车单', truck_split: '本单分摊', unlink: '取消关联', rc_filter: '金额不符', tb_free: '未关联订单',
     f_quote: '选卡车 (卡车明细)', f_link_orders: '关联哪些订单 (金额平摊进这些订单的成本)', per_order: '每单分摊', receipts: '收据 / 发票', unallocated: '没关联订单, 不计入任何订单成本', sec_pay: '付款',
     tq_add: '+ 添加车辆', new_quote: '添加车辆报价', edit_quote: '编辑报价', th_quote: '报价号', th_company: '公司', th_size: '尺寸', th_price: '价格', th_unit: '单位', th_uses: '用过次数',
     pu_day: '/ 天', pu_trip: '/ 趟', pu_hour: '/ 小时', all_states: '全部州', all_sizes: '全部尺寸', days: '天',
@@ -80,6 +85,11 @@ const I18N = {
     trucks_add: '+ Add Rental', new_truck: 'New Truck Order', edit_truck: 'Edit Truck Order', th_bill: 'Rental #', th_dates: 'Dates', th_purpose: 'Purpose', th_linked: 'Linked Orders', th_paid_by: 'Paid By', th_their_inv: 'Their Invoice',
     tp_pickup: 'Pickup', tp_delivery: 'Delivery', tp_other: 'Other', tb_unpaid: 'Pending', tb_paid: 'Completed', all_companies: 'All Companies', all_purposes: 'All Purposes',
     f_truck_co: 'Truck Company', f_state: 'State', f_size: 'Size', f_date_start: 'Start Date', f_date_end: 'End Date', f_amount: 'Amount', f_purpose: 'Purpose', f_tb_status: 'Status', f_paid_date: 'Paid Date', f_tb_method: 'Payment Method', f_paid_by: 'Paid By', f_their_inv: 'Their Invoice #',
+    sec_inv: 'Invoice / Billing Period', im_none: 'Not received', im_full: 'Full', im_partial: 'Partial', inv_no_ph: 'Their Invoice #', inv_amt_ph: 'This invoice amount',
+    inv_add: '+ Add another invoice (own period / amount)', inv_check: 'Auto-checked against system invoices', inv_click: 'click an invoice # for details', days: 'days', inv_total: 'Invoiced', inv_open: 'Remaining', inv_uncovered: 'not billed yet',
+    inv_expect: 'Expected', inv_outside: 'Period outside rental dates', inv_overlap: 'Period overlaps another invoice', inv_bad_period: 'End before start', inv_also: 'Same invoice also on', inv_detail: 'Invoice detail', rc_open: 'Partially billed',
+    f_inv_amount: 'Their Invoice Amount', use_inv_amount: 'Use invoice amount', rc_ok: 'Amount matches', rc_diff: 'Mismatch', rc_none: 'No invoice amount yet', rc_diff_by: 'off by', rc_booked: 'booked', rc_quote: 'quote',
+    sec_trucks: 'Truck Invoices (truck cost split into cost)', link_truck: '+ Link a truck order / invoice…', truck_none: 'No truck orders linked', truck_split: 'This order', unlink: 'Unlink', rc_filter: 'Mismatch', tb_free: 'unlinked',
     f_quote: 'Truck (from Truck Details)', f_link_orders: 'Linked orders (amount split evenly into their cost)', per_order: 'Per order', receipts: 'Receipts / Invoices', unallocated: 'Not linked — not in any order cost', sec_pay: 'Payment',
     tq_add: '+ Add Truck', new_quote: 'New Truck Quote', edit_quote: 'Edit Quote', th_quote: 'Quote #', th_company: 'Company', th_size: 'Size', th_price: 'Price', th_unit: 'Unit', th_uses: 'Times Used',
     pu_day: '/ day', pu_trip: '/ trip', pu_hour: '/ hour', all_states: 'All States', all_sizes: 'All Sizes', days: 'days',
@@ -218,7 +228,7 @@ function fillFilters() {
     setOptions(p + '-party', type === 'sales' ? [['', t('all_customers')], ...CUSTOMERS.map(c => [c.id, c.name])] : [['', t('all_suppliers')], ...SUPPLIERS.map(s => [s.id, s.name])]);
     setOptions(p + '-pay', [['', t('th_payment')], ...['uninvoiced', 'unpaid', 'partial', 'paid'].map(k => [k, t('pay_' + k)])]);
   }
-  setOptions('tb-status', [['', t('all_status')], ['unpaid', t('tb_unpaid')], ['paid', t('tb_paid')]]);
+  setOptions('tb-status', [['', t('all_status')], ['unpaid', t('tb_unpaid')], ['paid', t('tb_paid')], ['mismatch', '⚠ ' + t('rc_filter')]]);
   setOptions('tb-company', [['', t('all_companies')], ...truckCompanies().map(c => [c, c])]);
   setOptions('tb-purpose', [['', t('all_purposes')], ...['pickup', 'delivery', 'other'].map(k => [k, t('tp_' + k)])]);
   setOptions('tq-company', [['', t('all_companies')], ...[...new Set(QUOTES.map(q => q.company_name))].sort().map(c => [c, c])]);
@@ -425,8 +435,9 @@ async function openOrderModal(id, type, preset) {
       ${field(t('f_discount'), n('o-discount', o.discount, locked ? 'disabled' : ''))}${field(t('f_total'), `<div class="modal-input" id="o-total-view" style="background:var(--g50);font-weight:700"></div>`)}</div>
     <div class="modal-section">${t('sec_cost_po')}</div>
     <div class="modal-row" style="grid-template-columns:1fr 2fr">${field(t('f_extra'), n('o-extra_expense', o.extra_expense))}${field(t('f_extra_notes'), inp('o-extra_expense_notes', o.extra_expense_notes))}</div>
-    ${(o.truck_bills || []).length ? `<div class="modal-row">${field(t('f_truck_cost'), `<div style="font-size:11px;color:var(--g700);display:flex;flex-direction:column;gap:3px">${o.truck_bills.map(b =>
-      `<div><b>${esc(b.bill_no)}</b> · ${esc(b.truck_company || '')} · ${money(b.amount)}${b.order_count > 1 ? ` ÷ ${b.order_count} = <b>${money(b.amount / b.order_count)}</b>` : ''}</div>`).join('')}</div>`, true)}</div>` : ''}
+    <div class="modal-section">${t('sec_trucks')} <span id="o-truck-sum" style="float:right;color:var(--g600);font-weight:600"></span></div>
+    <div id="o-trucks" style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px"></div>
+    <select class="modal-input" id="o-truck-add" onchange="orderTruckAdd(this.value)" style="margin-bottom:8px"></select>
     <div class="modal-section">${isSO ? t('sec_logistics_so') : t('sec_logistics_po')}</div>
     <div class="modal-row" style="grid-template-columns:${isSO ? '1fr 1fr 2fr' : '1fr 3fr'}">
       ${isSO ? field(t('f_fulfillment'), sel('o-fulfillment', [['', '—'], ['delivery', t('dm_delivery')], ['pickup', t('dm_pickup')]], o.fulfillment, 'onchange="orderFulfillmentUI()"')) : ''}
@@ -447,6 +458,8 @@ async function openOrderModal(id, type, preset) {
       <button class="btn-save" id="o-save" onclick="saveOrder(${id || 'null'})">${t('save')}</button>
     </div>`, 820);
   window._editOrder = o;
+  window._oTrucks = (o.truck_bills || []).map(b => b.id);
+  orderTrucksRender();
   if (!isSO) SP = null; else spBind();
   if (o.address && o.address_verified === '1') setAddrStatus('o-addr-status', true);
   const partyEl = $(isSO ? 'o-customer_id' : 'o-supplier_id');
@@ -457,6 +470,28 @@ async function openOrderModal(id, type, preset) {
   orderPreview();
 }
 // 选了客户/货源 → 带出 送货方式 + 地址
+// 订单里关联卡车单 (卡车 invoice), 每张显示分摊金额 + 金额核对
+function orderTrucksRender() {
+  const oid = (window._editOrder || {}).id, ids = window._oTrucks;
+  const bills = ids.map(id => TRUCKS.find(b => b.id === id)).filter(Boolean);
+  let share = 0;
+  $('o-trucks').innerHTML = bills.length ? bills.map(b => {
+    const n = b.orders.filter(x => x.id !== oid).length + 1, part = (+b.amount || 0) / n; share += part;
+    return `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--g200);border-radius:7px;padding:6px 10px;font-size:11px">
+      <b>${esc(b.bill_no)}</b><span style="color:var(--g600)">${esc(b.truck_company || '')}${b.date_start ? ' · ' + esc(b.date_start) : ''}</span>
+      <span>Invoice ${(b.invoices || []).length ? b.invoices.map(x => `#${esc(x.invoice_no || '—')}${x.period_start ? ` <span style="color:var(--g400)">(${esc(x.period_start.slice(5))}~${esc((x.period_end || x.period_start).slice(5))})</span>` : ''}${x.amount != null ? ' ' + money(x.amount) : ''}`).join(' + ') : '—'}</span>
+      <span>${t('rc_booked')} ${money(b.amount)}${n > 1 ? ` ÷ ${n}` : ''} = <b>${money(part)}</b></span>${tbReconHtml(b)}
+      <span style="flex:1"></span><a href="#" onclick="event.preventDefault();orderTruckRemove(${b.id})" style="color:var(--red)">${t('unlink')}</a></div>`;
+  }).join('') : `<div style="color:var(--g400);font-size:11px">${t('truck_none')}</div>`;
+  $('o-truck_cost').value = Math.round(share * 100) / 100;
+  $('o-truck-sum').textContent = bills.length ? `${t('truck_split')} ${money(share)}` : '';
+  const avail = TRUCKS.filter(b => !ids.includes(b.id)).sort((x, y) => (y.date_start || '').localeCompare(x.date_start || '') || y.id - x.id);
+  $('o-truck-add').innerHTML = `<option value="">${t('link_truck')}</option>` + avail.map(b => `<option value="${b.id}">${esc([b.bill_no, b.truck_company, b.date_start,
+    b.invoice_no ? 'Inv #' + b.invoice_no : '', money(b.amount), b.orders.length ? b.orders.map(x => x.order_no).join(' ') : t('tb_free'),
+    tbRecon(b) === 'diff' ? '⚠ ' + t('rc_diff') : ''].filter(Boolean).join(' · '))}</option>`).join('');
+}
+function orderTruckAdd(v) { if (v) { window._oTrucks.push(+v); orderTrucksRender(); orderPreview(); } }
+function orderTruckRemove(id) { window._oTrucks = window._oTrucks.filter(x => x !== id); orderTrucksRender(); orderPreview(); }
 function orderPartyDefaults() {
   const isSO = $('o-type').value === 'sales';
   const p = isSO ? CUSTOMERS.find(x => String(x.id) === $('o-customer_id').value) : SUPPLIERS.find(x => String(x.id) === $('o-supplier_id').value);
@@ -496,6 +531,7 @@ function orderForm() {
   else o.supplier_id = $('o-supplier_id').value;
   if (o.customer_id === '__new') o.customer_id = ''; if (o.supplier_id === '__new') o.supplier_id = '';
   o.address_verified = !!$('o-addr-status').dataset.verified;
+  o.truck_bill_ids = window._oTrucks || [];
   return o;
 }
 function orderPreview() {
@@ -1182,12 +1218,51 @@ const tbDates = b => esc(b.date_start || '') + (b.date_end && b.date_end !== b.d
 const tbReceiptLinks = b => b.receipts.length ? b.receipts.map((f, i) => `<a href="/api/files/${encodeURIComponent(f)}" target="_blank" onclick="event.stopPropagation()" class="chip">&#128206; ${i + 1}</a>`).join(' ') : '<span style="color:var(--g400)">—</span>';
 const tbOrders = b => b.orders.length ? b.orders.map(o => `<span class="chip" style="margin:1px">${esc(o.order_no)}</span>`).join('') + (b.orders.length > 1 ? `<div class="tdct">${t('per_order')} ${money(b.amount / b.orders.length)}</div>` : '')
   : `<span style="color:var(--amb);font-size:10px">&#9888; ${t('unallocated')}</span>`;
+// 核对金额: 对方 Invoice 金额 vs 我们记的卡车单金额
+const dayN = d => Math.floor(new Date(d + 'T00:00:00Z') / 864e5);
+const spanDays = (a, b) => a ? Math.max(0, dayN(b || a) - dayN(a) + 1) : 0;
+// 账期覆盖了租期里的几天 (重叠只算一次)
+function invCoverage(b, lines) {
+  if (!b.date_start) return null;
+  const s = dayN(b.date_start), e = dayN(b.date_end || b.date_start), got = new Set();
+  for (const x of lines) if (x.period_start) for (let d = Math.max(s, dayN(x.period_start)); d <= Math.min(e, dayN(x.period_end || x.period_start)); d++) got.add(d);
+  return { covered: got.size, total: e - s + 1 };
+}
+// 每张发票按账期应收多少: 报价按天 → 天数 × 日价; 否则按天数比例摊卡车单金额
+function invExpected(b, x) {
+  const d = spanDays(x.period_start, x.period_end);
+  if (!d) return null;
+  if (b.quote_unit === 'day' && b.quote_price) return Math.round(d * b.quote_price * 100) / 100;
+  const tot = spanDays(b.date_start, b.date_end);
+  return tot ? Math.round((+b.amount || 0) * Math.min(d, tot) / tot * 100) / 100 : null;
+}
+const invSum = lines => lines.filter(x => x.amount !== null && x.amount !== '' && x.amount !== undefined).reduce((a, x) => a + (+x.amount || 0), 0);
+// 卡车单整体核对: none 未填 / ok 一致 / open 部分账期还没开完 / diff 金额不符
+function tbRecon(b) {
+  const lines = (b.invoices || []).filter(x => x.amount !== null && x.amount !== '' && x.amount !== undefined);
+  if (!b.invoice_mode && !lines.length && (b.invoice_amount === null || b.invoice_amount === undefined)) return 'none';
+  if (!lines.length) return 'none';
+  const tot = invSum(lines), a = +b.amount || 0;
+  if (Math.abs(tot - a) < 0.005) return 'ok';
+  if (b.invoice_mode === 'partial' && tot < a) { const c = invCoverage(b, lines); if (!c || c.covered < c.total) return 'open'; }
+  return 'diff';
+}
+function tbReconHtml(b, short) {
+  const r = tbRecon(b), tot = invSum(b.invoices || []);
+  if (r === 'none') return short ? '' : `<span style="color:var(--g400);font-size:10px">${t('rc_none')}</span>`;
+  if (r === 'ok') return `<span style="color:var(--grn);font-size:10px;font-weight:700">&#10003; ${t('rc_ok')}</span>`;
+  if (r === 'open') return `<span style="color:var(--amb);font-size:10px;font-weight:700">&#9684; ${t('rc_open')} ${money(tot)} / ${money(b.amount)}</span>`;
+  b = { ...b, invoice_amount: tot };
+  const d = +b.invoice_amount - (+b.amount || 0);
+  return `<span style="color:var(--red);font-size:10px;font-weight:700">&#9888; ${t('rc_diff')}${short ? ` ${d > 0 ? '+' : '−'}${money(Math.abs(d))}`
+    : `: Invoice ${money(b.invoice_amount)} · ${t('rc_booked')} ${money(b.amount)} · ${t('rc_diff_by')} ${d > 0 ? '+' : '−'}${money(Math.abs(d))}`}</span>`;
+}
 function tbRows() {
   const q = $('tb-search').value.trim().toLowerCase(), st = $('tb-status').value, co = $('tb-company').value, pu = $('tb-purpose').value;
   const f = $('tb-from').value, to = $('tb-to').value;
-  return TRUCKS.filter(b => (!st || b.status === st) && (!co || b.truck_company === co) && (!pu || b.purpose === pu) &&
+  return TRUCKS.filter(b => (!st || (st === 'mismatch' ? tbRecon(b) === 'diff' : b.status === st)) && (!co || b.truck_company === co) && (!pu || b.purpose === pu) &&
     (!f || (b.date_start || '') >= f) && (!to || (b.date_start || '') <= to) &&
-    (!q || [b.bill_no, b.truck_company, b.state, b.invoice_no, b.paid_by, b.payment_method, b.notes, ...b.orders.map(o => o.order_no + ' ' + (o.title || ''))].some(v => (v || '').toLowerCase().includes(q))));
+    (!q || [b.bill_no, b.truck_company, b.state, b.invoice_no, b.invoice_amount != null ? String(b.invoice_amount) : '', b.paid_by, b.payment_method, b.notes, ...b.orders.map(o => o.order_no + ' ' + (o.title || ''))].some(v => (v || '').toLowerCase().includes(q))));
 }
 const TB_GET = { bill_no: b => b.bill_no || '', truck_company: b => (b.truck_company || '').toLowerCase(), date_start: b => b.date_start || '', purpose: b => b.purpose || '', amount: b => +b.amount || 0, status: b => b.status };
 function renderTruckBills() {
@@ -1200,13 +1275,14 @@ function renderTruckBills() {
   if (!sortState.tb) sortState.tb = { key: 'date_start', dir: -1 };
   const rows = applySort('tb', tbRows(), TB_GET);
   const total = rows.reduce((a, b) => a + (+b.amount || 0), 0), openAmt = rows.filter(b => b.status !== 'paid').reduce((a, b) => a + (+b.amount || 0), 0);
-  $('tb-stats').innerHTML = chip(t('th_total'), money0(total)) + chip(t('tb_unpaid'), money0(openAmt)) + chip('#', rows.length);
+  const bad = rows.filter(b => tbRecon(b) === 'diff').length;
+  $('tb-stats').innerHTML = chip(t('th_total'), money0(total)) + chip(t('tb_unpaid'), money0(openAmt)) + chip('#', rows.length) + (bad ? chip('⚠ ' + t('rc_filter'), `<span class="neg">${bad}</span>`) : '');
   $('tb-tbody').innerHTML = rows.length ? rows.map(b => `<tr onclick="openTruckBillModal(${b.id})">
       <td class="tdn">${esc(b.bill_no)}${b.quote_no ? `<div class="tdct">${esc(b.quote_no)}</div>` : ''}</td><td>${tbDates(b)}</td>
       <td><div class="tdn" style="font-weight:600">${esc(b.truck_company || '')}</div><div class="tdct">${esc([b.state, b.size].filter(Boolean).join(' · '))}</div></td>
       <td>${esc(t('tp_' + b.purpose))}</td><td class="num" style="font-weight:700">${money(b.amount)}</td>
       <td style="white-space:normal;max-width:240px">${tbOrders(b)}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${esc(b.notes || '')}</td>
-      <td>${tbReceiptLinks(b)}</td><td>${esc(b.payment_method || '')}</td><td>${esc(b.paid_by || '')}</td><td>${esc(b.invoice_no || '')}</td>
+      <td>${tbReceiptLinks(b)}</td><td>${esc(b.payment_method || '')}</td><td>${esc(b.paid_by || '')}</td><td>${(b.invoices || []).map(x => `<div style="white-space:nowrap">${esc(x.invoice_no || '—')}${x.amount != null ? ` <span class="tdct">${money(x.amount)}</span>` : ''}</div>`).join('')}<div>${tbReconHtml(b, true)}</div></td>
       <td>${tbBadge(b.status)}${b.paid_date ? `<div class="tdct">${esc(b.paid_date)}</div>` : ''}</td></tr>`).join('')
     : `<tr class="empty-row"><td colspan="12">${t('no_data')}</td></tr>`;
   $('tb-tfoot').innerHTML = rows.length ? `<tr><td colspan="4">${rows.length}</td><td class="num">${money(total)}</td><td colspan="7"></td></tr>` : '';
@@ -1224,15 +1300,23 @@ function openTruckBillModal(id) {
     <div class="modal-row" style="grid-template-columns:2fr 1fr 1fr 1fr">${field(t('f_truck_co') + ' *', inp('tb-f-truck_company', b.truck_company, 'text', 'list="tb-co-list"'))}
       ${field(t('f_state'), inp('tb-f-state', b.state, 'text', 'maxlength="2" style="text-transform:uppercase"'))}${field(t('f_size'), inp('tb-f-size', b.size))}
       ${field(t('f_purpose'), sel('tb-f-purpose', ['pickup', 'delivery', 'other'].map(k => [k, t('tp_' + k)]), b.purpose))}</div>
-    <div class="modal-row" style="grid-template-columns:1fr 1fr 1fr">${field(t('f_date_start'), inp('tb-f-date_start', b.date_start, 'date', 'onchange="tbQuoteCalc(true)"'))}
-      ${field(t('f_date_end'), inp('tb-f-date_end', b.date_end, 'date', 'onchange="tbQuoteCalc(true)"'))}
-      ${field(t('f_amount') + ' *', inp('tb-f-amount', b.amount, 'number', 'oninput="tbPerOrder()"'))}</div>
+    <div class="modal-row" style="grid-template-columns:1fr 1fr 1fr">${field(t('f_date_start'), inp('tb-f-date_start', b.date_start, 'date', 'onchange="tbQuoteCalc(true);tbReconLive()"'))}
+      ${field(t('f_date_end'), inp('tb-f-date_end', b.date_end, 'date', 'onchange="tbQuoteCalc(true);tbReconLive()"'))}
+      ${field(t('f_amount') + ' *', inp('tb-f-amount', b.amount, 'number', 'oninput="tbPerOrder();tbReconLive()"'))}</div>
     <div id="tb-calc" style="font-size:10px;color:var(--g500);margin:-4px 0 6px"></div>
     <div class="modal-section">${t('sec_pay')}</div>
     <div class="modal-row" style="grid-template-columns:repeat(4,1fr)">
       ${field(t('f_tb_status'), sel('tb-f-status', [['unpaid', t('tb_unpaid')], ['paid', t('tb_paid')]], b.status))}${field(t('f_paid_date'), inp('tb-f-paid_date', b.paid_date, 'date'))}
       ${field(t('f_tb_method'), inp('tb-f-payment_method', b.payment_method, 'text', 'list="pay-methods"'))}${field(t('f_paid_by'), inp('tb-f-paid_by', b.paid_by, 'text', 'list="tb-paidby-list"'))}</div>
-    <div class="modal-row">${field(t('f_their_inv'), inp('tb-f-invoice_no', b.invoice_no))}<div></div></div>
+    <datalist id="tb-invno-list">${[...new Set(TRUCKS.flatMap(x => (x.invoices || []).map(i => i.invoice_no)).filter(Boolean))].map(c => `<option>${esc(c)}</option>`).join('')}</datalist>
+    <div class="inv-box">
+      <div class="inv-box-h">${t('sec_inv')}</div>
+      <select class="modal-input" id="tb-f-invoice_mode" onchange="tbInvMode()">${[['', t('im_none')], ['full', t('im_full')], ['partial', t('im_partial')]].map(([k, l]) => `<option value="${k}" ${(b.invoice_mode || '') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+      <div id="tb-inv-lines"></div>
+      <button type="button" class="inv-add" id="tb-inv-add" onclick="tbInvAdd()">${t('inv_add')}</button>
+      <div id="tb-recon" class="inv-recon"></div>
+      <div id="tb-inv-detail"></div>
+    </div>
     <div class="modal-section">${t('f_link_orders')} <span id="tb-per" style="float:right;color:var(--g600);font-weight:600"></span></div>
     <input class="modal-input" placeholder="${t('search')}" oninput="tbFilterOrders(this.value)" style="margin-bottom:6px"/>
     <div id="tb-order-list" style="max-height:200px;overflow:auto;border:1px solid var(--g200);border-radius:7px">
@@ -1250,7 +1334,106 @@ function openTruckBillModal(id) {
       ${id && currentUser.role === 'admin' ? `<button class="btn-del" onclick="deleteTruckBill(${id})">${t('delete')}</button>` : ''}
       <button class="btn-cancel" onclick="closeModal()">${t('cancel')}</button><button class="btn-save" id="tb-save" onclick="saveTruckBill(${id || 'null'})">${t('save')}</button>
     </div>`, 760);
-  tbPerOrder();
+  window._tbId = id || null; window._tbInvOpen = null;
+  window._tbInv = (b.invoices || []).map(x => ({ ...x }));
+  tbInvRender(); tbPerOrder(); tbQuoteCalc(); tbReconLive();
+}
+// ---- Invoice / 账期 ----
+const tbFormBill = () => {
+  const q = QUOTES.find(x => String(x.id) === $('tb-f-truck_quote_id').value);
+  return { id: window._tbId, amount: +$('tb-f-amount').value || 0, date_start: $('tb-f-date_start').value, date_end: $('tb-f-date_end').value,
+    quote_price: q ? q.price : null, quote_unit: q ? q.price_unit : null, invoice_mode: $('tb-f-invoice_mode').value, invoices: window._tbInv };
+};
+function tbInvRead() {
+  document.querySelectorAll('#tb-inv-lines .inv-line').forEach((el, i) => {
+    const x = window._tbInv[i]; if (!x) return;
+    x.invoice_no = el.querySelector('.iv-no').value.trim(); x.period_start = el.querySelector('.iv-s').value; x.period_end = el.querySelector('.iv-e').value;
+    const a = el.querySelector('.iv-amt').value; x.amount = a === '' ? null : +a;
+  });
+}
+function tbInvRender() {
+  const mode = $('tb-f-invoice_mode').value;
+  if (mode && !window._tbInv.length) tbInvNew();
+  if (mode === 'full') window._tbInv.splice(1);
+  const lines = mode ? window._tbInv : [];
+  $('tb-inv-lines').innerHTML = lines.map((x, i) => `<div class="inv-line">
+    <div style="display:flex;gap:6px"><input class="modal-input iv-no" list="tb-invno-list" placeholder="${t('inv_no_ph')}" value="${esc(x.invoice_no || '')}" oninput="tbInvChanged()"/>
+      ${lines.length > 1 ? `<button type="button" class="inv-del" title="${t('delete')}" onclick="tbInvDel(${i})">&times;</button>` : ''}</div>
+    <div class="modal-input iv-period">${x.period_start ? esc(x.period_start) + ' ~ ' + esc(x.period_end || x.period_start) + `&nbsp;<span style="color:var(--g400)">· ${spanDays(x.period_start, x.period_end)} ${t('days')}</span>` : '<span style="color:var(--g400)">—</span>'}</div>
+    <div class="inv-row"><input class="modal-input iv-s" type="date" value="${esc(x.period_start || '')}" onchange="tbInvChanged(true)"/><input class="modal-input iv-e" type="date" value="${esc(x.period_end || '')}" onchange="tbInvChanged(true)"/>
+      <input class="modal-input iv-amt" type="number" step="0.01" min="0" placeholder="${t('inv_amt_ph')}" value="${x.amount ?? ''}" oninput="tbInvChanged()"/></div>
+    <div class="iv-warn"></div></div>`).join('');
+  $('tb-inv-add').style.display = mode === 'partial' ? '' : 'none';
+  tbReconLive();
+}
+function tbInvNew() {
+  const prev = window._tbInv[window._tbInv.length - 1], ds = $('tb-f-date_start').value, de = $('tb-f-date_end').value || ds;
+  // 全部: 整个租期; 部分: 一周一张, 接着上一张的结束日期
+  let s = ds, e = de;
+  if (prev && prev.period_end) { const nx = new Date(prev.period_end + 'T00:00:00Z'); nx.setUTCDate(nx.getUTCDate() + 1); s = nx.toISOString().slice(0, 10); }
+  if (s && $('tb-f-invoice_mode').value === 'partial') {
+    const w = new Date(s + 'T00:00:00Z'); w.setUTCDate(w.getUTCDate() + 6); e = w.toISOString().slice(0, 10);
+    if (de && e > de) e = de; if (e < s) e = s;
+  }
+  window._tbInv.push({ invoice_no: prev ? prev.invoice_no : '', period_start: s || '', period_end: e || '', amount: null });
+}
+function tbInvMode() { tbInvRead(); tbInvRender(); }
+function tbInvAdd() { tbInvRead(); tbInvNew(); tbInvRender(); }
+function tbInvDel(i) { tbInvRead(); window._tbInv.splice(i, 1); tbInvRender(); }
+function tbInvChanged(rerender) { tbInvRead(); if (rerender) tbInvRender(); else tbReconLive(); }
+function tbReconLive() {
+  if (!$('tb-recon')) return;
+  const b = tbFormBill(), mode = b.invoice_mode, lines = mode ? b.invoices : [];
+  // 每张发票: 账期检查 + 应收 vs 实收
+  document.querySelectorAll('#tb-inv-lines .inv-line').forEach((el, i) => {
+    const x = lines[i]; if (!x) return;
+    const w = [];
+    if (x.period_start && x.period_end && x.period_end < x.period_start) w.push(t('inv_bad_period'));
+    if (b.date_start && x.period_start && (x.period_start < b.date_start || (x.period_end || x.period_start) > (b.date_end || b.date_start))) w.push(t('inv_outside'));
+    if (x.period_start && lines.some((y, j) => j !== i && y.period_start && x.period_start <= (y.period_end || y.period_start) && y.period_start <= (x.period_end || x.period_start))) w.push(t('inv_overlap'));
+    const ex = mode === 'partial' ? invExpected(b, x) : null;
+    if (ex !== null && x.amount !== null && Math.abs(x.amount - ex) >= 0.005) w.push(`${t('inv_expect')} ${money(ex)} · ${t('rc_diff_by')} ${x.amount > ex ? '+' : '−'}${money(Math.abs(x.amount - ex))}`);
+    el.querySelector('.iv-warn').innerHTML = w.map(s => `<div>&#9888; ${esc(s)}</div>`).join('');
+    el.classList.toggle('bad', w.length > 0);
+  });
+  if (!mode) { $('tb-recon').innerHTML = ''; $('tb-inv-detail').innerHTML = ''; return; }
+  const tot = invSum(lines), parts = [];
+  parts.push(tbReconHtml(b));
+  const cov = mode === 'partial' ? invCoverage(b, lines) : null;
+  if (cov && cov.covered < cov.total) parts.push(`<span style="color:var(--amb);font-size:10px">${cov.covered}/${cov.total} ${t('days')} · ${t('inv_open')} ${money(Math.max(0, b.amount - tot))} (${cov.total - cov.covered} ${t('days')} ${t('inv_uncovered')})</span>`);
+  const done = lines.length && lines.every(x => x.amount !== null && x.amount !== undefined) && (!cov || cov.covered >= cov.total);
+  if (done && window._tbQuoteAmt != null && Math.abs(tot - window._tbQuoteAmt) >= 0.005)
+    parts.push(`<span style="color:var(--amb);font-size:10px">${t('rc_quote')} ${money(window._tbQuoteAmt)} (${tot > window._tbQuoteAmt ? '+' : '−'}${money(Math.abs(tot - window._tbQuoteAmt))})</span>`);
+  if (done && Math.abs(tot - b.amount) >= 0.005) parts.push(`<a href="#" style="font-size:10px" onclick="event.preventDefault();tbUseInvAmount()">${t('use_inv_amount')} (${money(tot)})</a>`);
+  // 同一个发票号挂在其他卡车单上
+  const nos = [...new Set(lines.map(x => (x.invoice_no || '').trim()).filter(Boolean))];
+  const others = nos.map(no => [no, TRUCKS.filter(o => o.id !== b.id && (o.invoices || []).some(i => sameInv(i.invoice_no, no)))]).filter(([, l]) => l.length);
+  for (const [no, l] of others) parts.push(`<span style="font-size:10px;color:var(--g600)">${esc(no)}: ${t('inv_also')} ${l.map(o => esc(o.bill_no)).join(', ')}</span>`);
+  $('tb-recon').innerHTML = `<div class="inv-recon-h">&#129534; ${t('inv_check')}: ${nos.length ? nos.map(no => `<a href="#" onclick="event.preventDefault();tbInvDetail('${esc(no).replace(/'/g, '&#39;')}')">${esc(no)}</a>`).join(' · ') : `<span style="color:var(--g400)">${t('inv_click')}</span>`}</div>`
+    + `<div style="display:flex;flex-direction:column;gap:2px">${parts.filter(Boolean).map(p => `<div>${p}</div>`).join('')}</div>`;
+  if (window._tbInvOpen) tbInvDetail(window._tbInvOpen, true);
+}
+const sameInv = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase() && !!(a || '').trim();
+// 点发票号: 系统里所有挂这张发票的账期 (包括这张卡车单还没保存的改动)
+function tbInvDetail(no, keep) {
+  if (!keep && window._tbInvOpen === no) { window._tbInvOpen = null; $('tb-inv-detail').innerHTML = ''; return; }
+  window._tbInvOpen = no;
+  const cur = tbFormBill(), rows = [];
+  for (const o of TRUCKS) if (o.id !== cur.id) for (const x of o.invoices || []) if (sameInv(x.invoice_no, no)) rows.push([o, x]);
+  for (const x of cur.invoice_mode ? cur.invoices : []) if (sameInv(x.invoice_no, no)) rows.push([{ ...cur, bill_no: cur.id ? (TRUCKS.find(o => o.id === cur.id) || {}).bill_no : '(new)', truck_company: $('tb-f-truck_company').value, cur: 1 }, x]);
+  rows.sort((a, b) => (a[1].period_start || '').localeCompare(b[1].period_start || ''));
+  const tot = rows.reduce((a, [, x]) => a + (+x.amount || 0), 0), exTot = rows.reduce((a, [o, x]) => a + (invExpected(o, x) ?? (+x.amount || 0)), 0);
+  $('tb-inv-detail').innerHTML = `<div class="inv-detail"><div style="font-weight:700;margin-bottom:4px">${t('inv_detail')} · ${esc(no)}</div>
+    <table><tr><th>${t('th_bill')}</th><th>${t('th_company')}</th><th>Period</th><th class="num">${t('days')}</th><th class="num">${t('f_amount')}</th><th class="num">${t('inv_expect')}</th></tr>
+    ${rows.map(([o, x]) => { const ex = invExpected(o, x); const bad = ex !== null && x.amount !== null && Math.abs(x.amount - ex) >= 0.005;
+      return `<tr${o.cur ? ' style="background:#f0fdf4"' : ''}><td>${esc(o.bill_no || '')}</td><td>${esc(o.truck_company || '')}</td><td>${esc(x.period_start || '')}${x.period_end && x.period_end !== x.period_start ? ' ~ ' + esc(x.period_end) : ''}</td>
+        <td class="num">${spanDays(x.period_start, x.period_end) || ''}</td><td class="num">${x.amount !== null && x.amount !== undefined ? money(x.amount) : '—'}</td><td class="num" style="${bad ? 'color:var(--red);font-weight:700' : ''}">${ex !== null ? money(ex) : '—'}</td></tr>`; }).join('')}
+    <tr style="font-weight:700"><td colspan="4">${t('inv_total')}</td><td class="num">${money(tot)}</td><td class="num">${money(exTot)}</td></tr></table></div>`;
+}
+function tbUseInvAmount() {
+  const tot = invSum($('tb-f-invoice_mode').value ? window._tbInv : []);
+  if (!tot) return toast(t('inv_amt_ph') + '?', 'error');
+  $('tb-f-amount').value = Math.round(tot * 100) / 100; tbPerOrder(); tbReconLive();
 }
 // 选报价 → 带出公司/州/尺寸, 按天/趟算金额
 function tbQuotePicked() {
@@ -1261,7 +1444,7 @@ function tbQuotePicked() {
 }
 function tbQuoteCalc(force) {
   const q = QUOTES.find(x => String(x.id) === $('tb-f-truck_quote_id').value);
-  if (!q) { $('tb-calc').textContent = ''; return; }
+  if (!q) { $('tb-calc').textContent = ''; window._tbQuoteAmt = null; if ($('tb-recon')) tbReconLive(); return; }
   let n = 1;
   if (q.price_unit === 'day' && $('tb-f-date_start').value) {
     const e = $('tb-f-date_end').value || $('tb-f-date_start').value;
@@ -1269,7 +1452,9 @@ function tbQuoteCalc(force) {
   }
   const amt = Math.round(q.price * n * 100) / 100;
   $('tb-calc').textContent = `${money(q.price)} ${t('pu_' + q.price_unit)}${q.price_unit === 'day' ? ` × ${n} ${t('days')}` : ''} = ${money(amt)}`;
+  window._tbQuoteAmt = amt;
   if (force || !$('tb-f-amount').value) { $('tb-f-amount').value = amt; tbPerOrder(); }
+  if ($('tb-recon')) tbReconLive();
 }
 const tbReceiptChips = b => (b.receipts || []).map((f, i) => `<span class="chip"><a href="/api/files/${encodeURIComponent(f)}" target="_blank">&#128206; ${t('th_receipt')} ${i + 1}</a>
   <a href="#" onclick="event.preventDefault();delTruckReceipt(${b.id},'${esc(f)}')" style="color:var(--red);margin-left:4px">&times;</a></span>`).join('');
@@ -1280,7 +1465,8 @@ function tbPerOrder() {
 }
 async function saveTruckBill(id) {
   const body = {};
-  ['truck_quote_id', 'truck_company', 'state', 'size', 'purpose', 'date_start', 'date_end', 'amount', 'status', 'paid_date', 'payment_method', 'paid_by', 'invoice_no', 'notes'].forEach(k => body[k] = $('tb-f-' + k).value);
+  ['truck_quote_id', 'truck_company', 'state', 'size', 'purpose', 'date_start', 'date_end', 'amount', 'status', 'paid_date', 'payment_method', 'paid_by', 'invoice_mode', 'notes'].forEach(k => body[k] = $('tb-f-' + k).value);
+  tbInvRead(); body.invoices = body.invoice_mode ? window._tbInv : [];
   body.order_ids = [...document.querySelectorAll('.tb-ord:checked')].map(c => +c.value);
   if (!body.truck_company.trim()) return toast(t('f_truck_co') + '?', 'error');
   if (body.amount === '') return toast(t('f_amount') + '?', 'error');
@@ -1310,9 +1496,9 @@ async function deleteTruckBill(id) {
   try { await api('/api/truck-bills/' + id, { method: 'DELETE' }); closeModal(); toast(t('deleted')); refreshAll(); } catch (e) { toast(e.message, 'error'); }
 }
 function exportTruckBills() {
-  csv('truck-orders', ['Rental #', 'Truck Company', 'State', 'Size', 'Purpose', 'Start', 'End', 'Amount', 'Linked Orders', 'Per Order', 'Their Invoice', 'Payment Method', 'Paid By', 'Status', 'Paid Date', 'Notes'],
+  csv('truck-orders', ['Rental #', 'Truck Company', 'State', 'Size', 'Purpose', 'Start', 'End', 'Amount', 'Linked Orders', 'Per Order', 'Their Invoice', 'Invoice Amount', 'Difference', 'Payment Method', 'Paid By', 'Status', 'Paid Date', 'Notes'],
     applySort('tb', tbRows(), TB_GET).map(b => [b.bill_no, b.truck_company, b.state, b.size, b.purpose, b.date_start, b.date_end, b.amount, b.orders.map(o => o.order_no).join(' '),
-      b.orders.length ? (b.amount / b.orders.length).toFixed(2) : '', b.invoice_no, b.payment_method, b.paid_by, b.status, b.paid_date, b.notes]));
+      b.orders.length ? (b.amount / b.orders.length).toFixed(2) : '', b.invoice_no, b.invoice_amount ?? '', b.invoice_amount != null ? (b.invoice_amount - b.amount).toFixed(2) : '', b.payment_method, b.paid_by, b.status, b.paid_date, b.notes]));
 }
 
 // ---------- 卡车明细 (报价) ----------
